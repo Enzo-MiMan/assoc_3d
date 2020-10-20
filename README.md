@@ -1,4 +1,4 @@
-### data allocation
+### Data allocation
 
     training:
         - 2019-10-27-14-28-21
@@ -34,34 +34,68 @@
 
 
 
-### access to the dataset:
+### Access to the dataset:
+
     ssh xxlu@gate.stats.ox.ac.uk
     ssh xxlu@greytail.stats.ox.ac.uk
     squeue              # find the JOBID that USER is xxlu and NAME is runsc.sh
-    jinru <JOBID>       # eg.   jinru 773276
+    jinru <JOBID>       # e.g.   jinru 773276
     cd /data/greyostrich/not-backed-up/aims/aimsre/xxlu/assoc/workspace/indoor_data
     
     
 
-### data information
-    _slash_mmWaveDataHdl_slash_RScan_left.csv
-    _slash_mmWaveDataHdl_slash_RScan_middle.csv
-    _slash_mmWaveDataHdl_slash_RScan_right.csv
-    true_delta_gmapping.csv
-    
-    
-    
-    
-### data preprocess
+### Data information
 
+    1.raw data collected by the left, middle and right mm-wave radar:
+        _slash_mmWaveDataHdl_slash_RScan_left.csv
+        _slash_mmWaveDataHdl_slash_RScan_middle.csv
+        _slash_mmWaveDataHdl_slash_RScan_right.csv
+        
+    2.ground truth:
+        true_delta_gmapping.csv
     
     
     
     
+### Data pre-process
+1. overlay the left, middle, and right point clounds:
+
+    code file:
+        dsk
+        
+    data file :    
+        _slash_mmWaveDataHdl_slash_RScan_left.csv        
+        _slash_mmWaveDataHdl_slash_RScan_middle.csv        
+        _slash_mmWaveDataHdl_slash_RScan_right.csv       
     
-    
-    
-    
-    
+1. timestamp matches
 
 
+2. overlay the left, middle, and right point clounds:
+
+    code file:
+        dsk
+        
+    data file :    
+        _slash_mmWaveDataHdl_slash_RScan_left.csv        
+        _slash_mmWaveDataHdl_slash_RScan_middle.csv        
+        _slash_mmWaveDataHdl_slash_RScan_right.csv    
+    
+    
+3. timestamp matches
+    
+    
+        
+### main code -- corres_gmapping_aided.py
+
+input:
+    1. timestamp matches:   mm_gmapping_timestamp_match.txt
+    2. gmapping:  gmapping_T.txt, gmapping_R_matrix.txt
+    3. LMR point cloud:   
+    
+parameter:
+    gap = 4   # read from config.yaml
+
+output:
+    source point cloud:  mm_src_GA_sample.txt
+    matched destination point cloud:  mm_dts_GA_sample.txt
