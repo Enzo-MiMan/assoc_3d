@@ -67,7 +67,7 @@
         output file:
             gmapping_T.txt, gmapping_R_matrix.txt  
 
-    -----------------------------------------------------------------------
+   -----------------------------------------------------------------------
 
     3. overlay the left, middle, and right point clounds:
     overlay 
