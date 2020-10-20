@@ -34,7 +34,7 @@
 
 
 
-### Access to the dataset:
+### Access the dataset:
 
     ssh xxlu@gate.stats.ox.ac.uk
     ssh xxlu@greytail.stats.ox.ac.uk
@@ -42,60 +42,64 @@
     jinru <JOBID>       # e.g.   jinru 773276
     cd /data/greyostrich/not-backed-up/aims/aimsre/xxlu/assoc/workspace/indoor_data
     
-    
-
-### Data information
-
-    1.raw data collected by the left, middle and right mm-wave radar:
-        _slash_mmWaveDataHdl_slash_RScan_left.csv
-        _slash_mmWaveDataHdl_slash_RScan_middle.csv
-        _slash_mmWaveDataHdl_slash_RScan_right.csv
-        
-    2.ground truth:
-        true_delta_gmapping.csv
-    
-    
+  
     
     
 ### Data pre-process
-1. overlay the left, middle, and right point clounds:
 
-    code file:
-        dsk
+    1. timestamp matches
+        match mm-wave timestamps and gamapping timestamps. If the time difference is less than , 
+        we consider them as the matched point cloud that had been collected at the same time.
         
-    data file :    
+        code file: timestamp_match_mm_gmapping.py
+   
+   
+   -----------------------------------------------------------------------
+   
+    2. extract gmapping: read gmapping translation and rotation
+
+        code file:
+            gmapping_R_T_from_csv.py
+            
+        input file:
+            true_delta_gmapping.csv
+
+        output file:
+            gmapping_T.txt, gmapping_R_matrix.txt  
+
+    -----------------------------------------------------------------------
+
+    3. overlay the left, middle, and right point clounds:
+    overlay 
+    
+    
+    input file:
         _slash_mmWaveDataHdl_slash_RScan_left.csv        
         _slash_mmWaveDataHdl_slash_RScan_middle.csv        
-        _slash_mmWaveDataHdl_slash_RScan_right.csv       
-    
-1. timestamp matches
-
-
-2. overlay the left, middle, and right point clounds:
-
-    code file:
-        dsk
+        _slash_mmWaveDataHdl_slash_RScan_right.csv 
         
-    data file :    
-        _slash_mmWaveDataHdl_slash_RScan_left.csv        
-        _slash_mmWaveDataHdl_slash_RScan_middle.csv        
-        _slash_mmWaveDataHdl_slash_RScan_right.csv    
+        
+    output file:
     
     
-3. timestamp matches
     
     
+    
+    
+
+            
+            
         
 ### main code -- corres_gmapping_aided.py
 
-input:
-    1. timestamp matches:   mm_gmapping_timestamp_match.txt
-    2. gmapping:  gmapping_T.txt, gmapping_R_matrix.txt
-    3. LMR point cloud:   
-    
-parameter:
-    gap = 4   # read from config.yaml
+    input:
+        1. timestamp matches:   mm_gmapping_timestamp_match.txt
+        2. gmapping:  gmapping_T.txt, gmapping_R_matrix.txt
+        3. LMR point cloud:   
 
-output:
-    source point cloud:  mm_src_GA_sample.txt
-    matched destination point cloud:  mm_dts_GA_sample.txt
+    parameter:
+        gap = 4   # read from config.yaml
+
+    output:
+        source point cloud:  mm_src_GA_sample.txt
+        matched destination point cloud:  mm_dts_GA_sample.txt
