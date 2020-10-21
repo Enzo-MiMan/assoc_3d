@@ -47,12 +47,21 @@
     
 ### Data pre-process
 
-    1. timestamp matches
-        match mm-wave timestamps and gamapping timestamps. If the time difference is less than , 
-        we consider them as the matched point cloud that had been collected at the same time.
+    1. timestamp matches: matching mm-wave timestamps and gamapping timestamps      
+        Find the closest gamapping timestamp for each mm-wave timestamp
         
         code file: timestamp_match_mm_gmapping.py
-   
+        
+        input:
+            1. mm-wave middle board data: _slash_mmWaveDataHdl_slash_RScan_middle.csv
+            2. gmapping data: true_delta_gmapping.csv
+
+        parameter:
+            gap = 4   # read from config.yaml
+
+        return:
+            timestamp matching: mm-wave, gmapping # for the first and second columns respectively
+
    
    -----------------------------------------------------------------------
    
@@ -61,45 +70,76 @@
         code file:
             gmapping_R_T_from_csv.py
             
-        input file:
-            true_delta_gmapping.csv
+        input:
+            true_delta_gmapping.csv  # include fields: timestamp, x, y, z, qx, qy, qz, qw
 
-        output file:
-            gmapping_T.txt, gmapping_R_matrix.txt  
+        return:
+            translation, rotation    # array (frame_num-1, 4),  array (frame_num-1, 10)
 
    -----------------------------------------------------------------------
 
     3. overlay the left, middle, and right point clounds:
-    overlay 
     
-    
-    input file:
-        _slash_mmWaveDataHdl_slash_RScan_left.csv        
-        _slash_mmWaveDataHdl_slash_RScan_middle.csv        
-        _slash_mmWaveDataHdl_slash_RScan_right.csv 
-        
-        
-    output file:
-    
-    
-    
-    
-    
-    
+        input file:
+            _slash_mmWaveDataHdl_slash_RScan_left.csv        
+            _slash_mmWaveDataHdl_slash_RScan_middle.csv        
+            _slash_mmWaveDataHdl_slash_RScan_right.csv 
+
+
+        output file:
+                LMR_xyz/
+                        1574955812871341906.xyz
+                        1574955812921587941.xyz
+                        .....
 
             
-            
         
-### main code -- corres_gmapping_aided.py
+### main code
+
+    code file: corres_gmapping_aided.py
 
     input:
         1. timestamp matches:   mm_gmapping_timestamp_match.txt
         2. gmapping:  gmapping_T.txt, gmapping_R_matrix.txt
-        3. LMR point cloud:   
-
-    parameter:
-        gap = 4   # read from config.yaml
-
+        3. LMR point cloud:   LMR_xyz/1574955812871341906.xyz                            
+                                      1574955812921587941.xyz   
+                                      .....
+                       
     output:
         source point cloud:  mm_src_GA_sample.txt
         matched destination point cloud:  mm_dts_GA_sample.txt
+        
+        
+        
+### data for training
+
+    training data:
+        LMR_xyz/                         # LMR_xy: a file include all frames within a sequence
+            1574955812871341906.xyz      # 1574955812871341906.xyz: a frame of point cloud
+            1574955812921587941.xyz
+            .....
+            
+    ground truth:
+        mm_src_gt_3d.txt
+        mm_dts_gt_3d.txt
+        
+        format:
+           --------------------------------------------------------------------------------------------------------------------------
+          |      mm_src_gt_3d.txt                                        |    mm_dts_gt_3d.txt                                       |
+          |--------------------------------------------------------------|-----------------------------------------------------------|
+          | x1 y1 z1 x2 y2 z2 x3 y3 z3 .....          # frame k + 4      | x1 y1 z1 x2 y2 z2 x3 y3 z3 .....          # frame k       |
+          | x1 y1 z1 x2 y2 z2 x3 y3 z3 .....          # frame k + 8      | x1 y1 z1 x2 y2 z2 x3 y3 z3 .....          # frame k + 4   |
+          | x1 y1 z1 x2 y2 z2 x3 y3 z3 .....          # frame k + 12     | x1 y1 z1 x2 y2 z2 x3 y3 z3 .....          # frame k + 8   | 
+          | .....                                                        | .....                                                     |
+           --------------------------------------------------------------------------------------------------------------------------
+          x1 x2 x3 of frame k+4 in mm_src_gt_3d.txt  is corresponding to x1 x2 x3 of frame k in mm_src_gt_3d.txt
+          x1 x2 x3 of frame k+8 in mm_src_gt_3d.txt  is corresponding to x1 x2 x3 of frame k+4 in mm_src_gt_3d.txt
+          
+          note: 
+            1. the number of values in each frame(row) can be divisible by 3, since they are all made up of x, y, and z
+            2. the number of values between differnent frames(columns) are different.
+            3. the associated frame pairs (source point cloud and destination point cloud) have the same number of points
+            
+  
+        
+        
