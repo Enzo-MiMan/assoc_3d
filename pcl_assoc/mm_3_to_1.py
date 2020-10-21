@@ -13,23 +13,17 @@ output:
 
 import numpy as np
 import time
-import re
 import shutil
 import matplotlib.pyplot as plt
 plt.style.use('seaborn-bright')
 import os
 import yaml
 from os.path import join
-import csv
 import collections
-# import cv2
 import math
 from pyquaternion import Quaternion
 from mmwave_bag import make_frames_from_csv
 
-# import pptk
-# import tqdm
-# from util.pcl2depth import velo_points_2_pano
 
 
 
@@ -81,7 +75,7 @@ align_interval = 5e7
 
 
 
-for sequence in exp_names:
+for sequence in sequence_names:
 
     # ------------------------ process middle ------------------------
 

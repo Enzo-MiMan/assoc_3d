@@ -107,18 +107,6 @@ radar:
 
 
 
-board:
-  '1843':
-    lin_scale: 0.002604
-    to_db: 6.0206
-    dsp: -18.0618
-
-lidar_occ_map:
-    exp_name: 2019-05-18-15-11-34
-    params:
-      offset: 4
-      xlim: 8
-      ylim: 4
 
 pre_process:
     bag_dir: /media/disk1/chris/Dropbox/mm_slam/data/original/2019-10-24-18-24-40
