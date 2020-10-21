@@ -139,6 +139,10 @@
             1. the number of values in each frame(row) can be divisible by 3, since they are all made up of x, y, and z
             2. the number of values between differnent frames(columns) are different.
             3. the associated frame pairs (source point cloud and destination point cloud) have the same number of points
+            4. the number of frames in training data (namely the number of files in folder LMR_xyz) is quadruple than ground truth frames, 
+               because we use the gap=4 to implement the point cloud matching. From our experiment, we find that with gap=4, the point clound correspondence 
+               is more accurate. The frequency of mm-wave radar collecting data is pretty high, so with smaller gap, the correspondences may have 
+               lower precision.
             
   
         
