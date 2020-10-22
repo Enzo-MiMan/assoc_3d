@@ -1,12 +1,37 @@
 """
-input:
+input: (adjust sequences "file name" in the cofig.yaml)
 
+    2019-11-28-15-43-32
+        _slash_mmWaveDataHdl_slash_RScan_middle.csv
+        _slash_mmWaveDataHdl_slash_RScan_left
+        _slash_mmWaveDataHdl_slash_RScan_right
 
-parameter:
+    2019-10-27-15-24-29
+        _slash_mmWaveDataHdl_slash_RScan_middle.csv
+        _slash_mmWaveDataHdl_slash_RScan_left
+        _slash_mmWaveDataHdl_slash_RScan_right
 
+    ....
 
 output:
+    2019-11-28-15-43-32
+        _slash_mmWaveDataHdl_slash_RScan_middle.csv
+        _slash_mmWaveDataHdl_slash_RScan_left
+        _slash_mmWaveDataHdl_slash_RScan_right
+        LMR_xyz
+            1574955812871341906.xyz
+            1574955812921587941.xyz
+            .....
 
+    2019-10-27-15-24-29
+        _slash_mmWaveDataHdl_slash_RScan_middle.csv
+        _slash_mmWaveDataHdl_slash_RScan_left
+        _slash_mmWaveDataHdl_slash_RScan_right
+        LMR_xyz
+            1574955812871341906.xyz
+            1574955812921587941.xyz
+            .....
+    .....
 
 """
 

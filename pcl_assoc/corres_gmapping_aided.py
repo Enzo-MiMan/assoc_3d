@@ -53,7 +53,7 @@ def draw_o3d(src, dst):
 def read_mm_pcl(mm_ts):
 
     # read the mm-wave radar point clouds from two frames which have been matched with gmapping
-    mm_path = join(data_dir, sequence, 'mmwave_LMR_xyz', str(mm_ts) + '.xyz')
+    mm_path = join(data_dir, sequence, 'LMR_xyz', str(mm_ts) + '.xyz')
     mm_collect = o3d.io.read_point_cloud(mm_path)
     mm_collect = np.array(mm_collect.points)
 
@@ -78,6 +78,7 @@ def predict_next_pose(src_mm_ts, dst_mm_ts, src_gmap_ts, dst_gmap_ts, gmap_T, gm
         mm_dst_collect = mm_src_pred
 
     return mm_src_pred, mm_src_collect
+
 
 
 
@@ -107,25 +108,27 @@ def save_assoc_mmpcl(sample_src_indices, sample_dst_indices, src_mm_ts, dst_mm_t
         mm_src_collect = read_mm_pcl(src_mm_ts)
         mm_dst_collect = read_mm_pcl(dst_mm_ts)
 
-        sample_src_collect = mm_src_collect[sample_src_indices, :]
-        sample_dst_collect = mm_dst_collect[sample_dst_indices, :]
+        sample_src = mm_src_collect[sample_src_indices, :]
+        sample_dst = mm_dst_collect[sample_dst_indices, :]
 
         # draw_matplotlib(sample_src_collect, sample_dst_collect)
         # draw_o3d(mm_dst_calcul, mm_dst_collect)
 
         l1 = ''
         l2 = ''
-        for point in sample_src_collect:
+        for point in sample_src:
             l1 = (l1 + str(point[0]) + ' ' + str(point[1]) + ' ' + str(point[2]) + ' ')
 
-        for point in sample_dst_collect:
+        for point in sample_dst:
             l2 = (l2 + str(point[0]) + ' ' + str(point[1]) + ' ' + str(point[2]) + ' ')
 
-        with open('/Users/manmi/Documents/data/square_data/mm_data/mm_src_gt_3d.txt', 'a+') as myfile:
+        with open(join(data_dir, str(sequence), 'mm_src_gt_3d.txt'), 'a+') as myfile:
             myfile.write(str(src_mm_ts) + ' ' + l1 + '\n')
 
-        with open('/Users/manmi/Documents/data/square_data/mm_data/mm_dts_gt_3d.txt', 'a+') as myfile:
+        with open(join(data_dir, str(sequence), 'mm_dts_gt_3d.txt'), 'a+') as myfile:
             myfile.write(str(dst_mm_ts) + ' ' + l2 + '\n')
+
+        print('finished the',sequence,'processing')
 
 
 if __name__ == '__main__':
@@ -159,24 +162,19 @@ if __name__ == '__main__':
             compose R, t within consecutive gap frames from gmapping 
             then apply R, t on source point cloud of mm-wave to predict the pose of point cloud in next frame
             """
-            mm_dst_pred, mm_dst_collect = predict_next_pose(src_mm_ts, dst_mm_ts, src_gmap_ts, dst_gmap_ts, gmap_T, gmap_R)
+            mm_src_pred, mm_src_collect = predict_next_pose(src_mm_ts, dst_mm_ts, src_gmap_ts, dst_gmap_ts, gmap_T, gmap_R)
 
             # find the intersection between predicted point cloud and collected point cloud
-            distances, indices = nearest_neighbor(mm_dst_pred, mm_dst_collect)
+            distances, indices = nearest_neighbor(mm_src_pred, mm_src_collect)
             pc_match = np.array([(i, v) for (i, v) in enumerate(indices)])
 
             # intersection: sample the points by the DISTANCE_THRESHOLD between two frames of mm-wave point cloud
-            sample_src_indices = np.reshape(np.where(distances < DISTANCE_THRESHOLD), (-1))
-            sample_dst_indices = pc_match[sample_src_indices, 1]
+            sample_dst_indices = np.reshape(np.where(distances < DISTANCE_THRESHOLD), (-1))
+            sample_src_indices = pc_match[sample_dst_indices, 1]
 
             assert len(sample_src_indices) >= 3
-
-            # record the number of intersection points for all point cloud pair correspondences
-            num_match_pc.append(len(sample_src_indices))
 
             # save the intersection points separately (correspondence point cloud)
             save_assoc_mmpcl(sample_src_indices, sample_dst_indices, src_mm_ts, dst_mm_ts)
 
         num_match_pc = np.array(num_match_pc)
-        # print('DISTANCE_THRESHOLD =',DISTANCE_THRESHOLD, ', the frames of', np.where(num_match_pc < 3), 'points matching number are less than 3.')
-        # print(num_match_pc)
