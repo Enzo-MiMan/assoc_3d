@@ -61,7 +61,7 @@
             gap = 4   # read from config.yaml
 
         return:
-            timestamp matching: mm-wave, gmapping # for the first and second columns respectively
+            timestamp matching: mm-wave_timestamps, gmapping_timestamps  # for the first and second columns respectively
 
    
    -----------------------------------------------------------------------
@@ -100,29 +100,29 @@
     code file: corres_gmapping_aided.py
 
     input:
-        1. timestamp matches:   mm_gmapping_timestamp_match.txt
-        2. gmapping:  gmapping_T.txt, gmapping_R_matrix.txt
+        1. timestamp matches:   mm-wave_timestamps, gmapping_timestamps
+        2. gmapping:  translation, rotation
         3. LMR point cloud:   LMR_xyz/1574955812871341906.xyz                            
                                       1574955812921587941.xyz   
                                       .....
                        
     output:
-        source point cloud:  mm_src_GA_sample.txt
-        matched destination point cloud:  mm_dts_GA_sample.txt
+        source point cloud: mm_src_gt_3d.txt  
+        matched destination point cloud:  mm_dts_gt_3d.txt 
         
         
         
-### training data and ground truth
+### training data and ground truth (example with a single sequence:2019-10-27-14-28-21)
 
     training data:
-        LMR_xyz/                         # LMR_xy: a file include all frames within a sequence
-            1574955812871341906.xyz      # 1574955812871341906.xyz: a frame of point cloud
-            1574955812921587941.xyz
-            .....
+        2019-10-27-14-28-21/LMR_xyz/                             # LMR_xy: a folder include all frames of a sequence
+                                    1574955812871341906.xyz      # 1574955812871341906.xyz: a frame of point cloud
+                                    1574955812921587941.xyz
+                                    .....
             
     ground truth:
-        mm_src_gt_3d.txt
-        mm_dts_gt_3d.txt
+        2019-10-27-14-28-21/mm_src_gt_3d.txt
+        2019-10-27-14-28-21/mm_dts_gt_3d.txt
         
         format:
            ------------------------------------------------------------------------------------------------------------------
