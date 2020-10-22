@@ -37,7 +37,8 @@
 ### Access the dataset:
 
     ssh xxlu@gate.stats.ox.ac.uk
-    ssh xxlu@greytail.stats.ox.ac.uk
+    ssh xxlu@greytail.stats.ox.ac.uk       
+    # you can use "ssh oxford" to login directly (replace the above 2 steps), because you had set up the config fig
     squeue              # find the JOBID that USER is xxlu and NAME is runsc.sh
     jinru <JOBID>       # e.g.   jinru 773276
     cd /data/greyostrich/not-backed-up/aims/aimsre/xxlu/assoc/workspace/indoor_data
@@ -111,7 +112,7 @@
         
         
         
-### data for training
+### training data and ground truth
 
     training data:
         LMR_xyz/                         # LMR_xy: a file include all frames within a sequence
@@ -146,4 +147,30 @@
             
   
         
-        
+### download data
+        step 1： pull data (both folder and file) from greyostrich to greytail  
+                 rsync -avz  /data/path/in/greyostrich   greytail:/destination/path/in/greytail
+         
+         step 2： pull data file from greytail to local 
+                  scp  oxford:/file/path/in/greytail   /your/local/path
+
+
+                  or pull data folder from greytail to local 
+                  scp -r oxford:/folder/path/in/greytail /your/local/path
+
+
+### the data you need are:   
+        2019-10-27-14-28-21
+                LMR_xyz    
+                mm_src_gt_3d.txt
+                mm_dts_gt_3d.txt
+                
+        2019-10-27-14-39-09
+                LMR_xyz   
+                mm_src_gt_3d.txt
+                mm_dts_gt_3d.txt
+                
+        ....
+
+
+
