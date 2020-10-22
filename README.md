@@ -34,7 +34,7 @@
 
 
 
-### Access the dataset:
+### Access dataset:
 
     ssh xxlu@gate.stats.ox.ac.uk
     ssh xxlu@greytail.stats.ox.ac.uk       
@@ -46,7 +46,7 @@
   
     
     
-### Data pre-process
+### Data pre-processing
 
     1. timestamp matches: matching mm-wave timestamps and gamapping timestamps      
         Find the closest gamapping timestamp for each mm-wave timestamp
