@@ -95,7 +95,7 @@
 
             
         
-### main code
+### Main code
 
     code file: corres_gmapping_aided.py
 
@@ -112,7 +112,7 @@
         
         
         
-### training data and ground truth (example with a single sequence:2019-10-27-14-28-21)
+### Training data and ground truth (example with a single sequence:2019-10-27-14-28-21)
 
     training data:
         2019-10-27-14-28-21/LMR_xyz/                             # LMR_xy: a folder include all frames of a sequence
@@ -147,7 +147,7 @@
             
   
         
-### download data
+### Download data
         step 1： pull data (both folder and file) from greyostrich to greytail  
                     rsync -avz  /data/path/in/greyostrich   greytail:/destination/path/in/greytail
          
@@ -158,7 +158,7 @@
                     scp -r oxford:/folder/path/in/greytail  /your/local/path
 
 
-### the data you need are:   
+### The data you need are:   
         2019-10-27-14-28-21
                 LMR_xyz    
                 mm_src_gt_3d.txt
