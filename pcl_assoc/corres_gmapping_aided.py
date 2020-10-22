@@ -146,7 +146,7 @@ if __name__ == '__main__':
     DISTANCE_THRESHOLD = cfg['radar']['DISTANCE_THRESHOLD']
 
 
-    for sequence in exp_names:
+    for sequence in sequence_names:
 
         ts_matches = timestamp_match(data_dir, sequence, gap)
         gmap_T, gmap_R = gmapping_TR(data_dir, sequence)
