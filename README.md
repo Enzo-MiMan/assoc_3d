@@ -38,7 +38,7 @@
 
     ssh xxlu@gate.stats.ox.ac.uk
     ssh xxlu@greytail.stats.ox.ac.uk       
-    # you can use "ssh oxford" to login directly (replace the above 2 steps), because you had set up the config fig
+    # you can use "ssh oxford" to login directly (replace the above 2 steps), because you had set up the config file
     squeue              # find the JOBID that USER is xxlu and NAME is runsc.sh
     jinru <JOBID>       # e.g.   jinru 773276
     cd /data/greyostrich/not-backed-up/aims/aimsre/xxlu/assoc/workspace/indoor_data
