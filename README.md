@@ -149,14 +149,13 @@
         
 ### download data
         step 1： pull data (both folder and file) from greyostrich to greytail  
-                 rsync -avz  /data/path/in/greyostrich   greytail:/destination/path/in/greytail
+                    rsync -avz  /data/path/in/greyostrich   greytail:/destination/path/in/greytail
          
-         step 2： pull data file from greytail to local 
-                  scp  oxford:/file/path/in/greytail   /your/local/path
+        step 2： pull data file from greytail to local 
+                    scp  oxford:/file/path/in/greytail   /your/local/path
 
-
-                  or pull data folder from greytail to local 
-                  scp -r oxford:/folder/path/in/greytail /your/local/path
+                 or pull data folder from greytail to local 
+                    scp -r oxford:/folder/path/in/greytail  /your/local/path
 
 
 ### the data you need are:   
