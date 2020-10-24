@@ -9,8 +9,7 @@ input:
                 '../../indoor_data/2019-11-28-15-43-32/_slash_mmWaveDataHdl_slash_RScan_middle.csv'
                 '../../indoor_data/2019-11-28-15-43-32/_slash_mmWaveDataHdl_slash_RScan_right.csv'
 
-output:  depth image
-                '../../indoor_data/2019-11-28-15-43-32/depth_enzo'
+output:  depth image   #  save in '../../indoor_data/2019-11-28-15-43-32/depth_enzo'
 '''
 
 
@@ -20,15 +19,14 @@ import shutil
 import matplotlib.pyplot as plt
 plt.style.use('seaborn-bright')
 import os
-import yaml
 from os.path import join
-import csv
-from pcl2depth import velo_points_2_pano
 import collections
+import yaml
 import cv2
 import tqdm
-from mmwave_bag import make_frames_from_csv
 import math
+from mmwave_bag import make_frames_from_csv
+from pcl2depth import velo_points_2_pano
 from pyquaternion import Quaternion
 
 
@@ -93,7 +91,6 @@ rt_matrix = quaternion_to_rotation_matrix(right_transform[3:7])
 left_quaternion = Quaternion(axis=[0, 0, 1], angle=math.pi / 2)
 right_quaternion = Quaternion(axis=[0, 0, 1], angle=-math.pi / 2)
 
-
 align_interval = 5e7
 
 for sequence_name in exp_names:
@@ -114,15 +111,12 @@ for sequence_name in exp_names:
 
     frames = list()
     timestamps = list()
-    valid_data = list()
 
     for timestamp, pts in data_dict.items():
         # iterate each pt
         heatmap_per_frame = list()
-        test_frame = list()
         for pt in pts:
             tmp = np.array(pt)
-            test_frame.append(tmp[[0, 1, 2, 3, 5]])
             tmp_loc = tmp[0:3]
 
             if topic == '_slash_mmWaveDataHdl_slash_RScan_middle':
@@ -141,8 +135,6 @@ for sequence_name in exp_names:
             continue
         frames.append(np.array(heatmap_per_frame))
         timestamps.append(timestamp)
-        valid_data.append([0, 0])
-
 
 
     # --------------------------------- process left and right ---------------------------------
@@ -158,6 +150,7 @@ for sequence_name in exp_names:
         # !!! sort the dict before using
         data_dict = collections.OrderedDict(sorted(readings_dict.items()))
 
+
         for timestamp, pts in data_dict.items():
 
             # iterate each pt
@@ -166,7 +159,7 @@ for sequence_name in exp_names:
             for pt in pts:
                 tmp = np.array(pt)
                 tmp_loc = tmp[0:3]
-                # tmp_loc = np.concatenate((tmp_loc, [1]))
+
                 if topic == '_slash_mmWaveDataHdl_slash_RScan_middle':
                     translated_tmp = tmp_loc + middle_transform[0:3]
                 elif topic == '_slash_mmWaveDataHdl_slash_RScan_left':
@@ -188,14 +181,9 @@ for sequence_name in exp_names:
             for i in range(0, len(timestamps)):
                 if abs(int(timestamp) - int(timestamps[i])) <= align_interval:
                     frames[i] = np.concatenate((frames[i], np.array(heatmap_per_frame)))
-                    if topic == '_slash_mmWaveDataHdl_slash_RScan_left':
-                        valid_data[i][0] = 1
-                    elif topic == '_slash_mmWaveDataHdl_slash_RScan_right':
-                        valid_data[i][1] = 1
-
-
 
     # ------------------------- pcl to depth -------------------------
+
     radar_map_dir = join(data_dir, str(sequence_name), 'depth_enzo')
     if os.path.exists(radar_map_dir):
         shutil.rmtree(radar_map_dir)
@@ -204,15 +192,26 @@ for sequence_name in exp_names:
     else:
         os.makedirs(radar_map_dir)
 
+    pixel_coord_dir = join(data_dir, str(sequence_name), 'depth_pixel_coordinate')
+    if os.path.exists(pixel_coord_dir):
+        shutil.rmtree(pixel_coord_dir)
+        time.sleep(5)
+        os.makedirs(pixel_coord_dir)
+    else:
+        os.makedirs(pixel_coord_dir)
+
+
+
     v_fov = tuple(map(int, cfg['pcl2depth']['v_fov'][1:-1].split(',')))
     h_fov = tuple(map(int, cfg['pcl2depth']['h_multi_fov'][1:-1].split(',')))
 
     frame_idx = 0
+    corrd_dict = dict()
     for timestamp, frame in tqdm.tqdm(zip(timestamps, frames), total=len(timestamps)):
 
         # only select those points with the certain range (in meters) - 5.12 meter for this TI board
         eff_rows_idx = (frame[:, 1] ** 2 + frame[:, 0] ** 2) ** 0.5 < cfg['pcl2depth']['mmwave_dist_thre']
-        pano_img = velo_points_2_pano(frame[eff_rows_idx, :], cfg['pcl2depth']['v_res'], cfg['pcl2depth']['h_res'],
+        pano_img, point_info = velo_points_2_pano(frame[eff_rows_idx, :], cfg['pcl2depth']['v_res'], cfg['pcl2depth']['h_res'],
                                       v_fov, h_fov, cfg['pcl2depth']['max_v'], depth=True)
 
         if pano_img.size == 0:
@@ -220,14 +219,17 @@ for sequence_name in exp_names:
             frame_idx = frame_idx + 1
             continue
 
-        # pano_img = cv2.resize(pano_img, (pano_img.shape[1] * 4, pano_img.shape[0] * 4))
-        fig_path = join(radar_map_dir, '{}.png'.format(timestamp))
-
         # cv2.imshow("grid", pano_img)
         # cv2.waitKey(1)
 
-        cv2.imwrite(fig_path, pano_img)
+        img_path = join(radar_map_dir, '{}.png'.format(timestamp))
+        cv2.imwrite(img_path, pano_img)
+
+        pixel_coord_file = join(pixel_coord_dir, '{}.txt'.format(timestamp))
+        with open(pixel_coord_file, 'a+') as myfile:
+
+            for row, col, dist in point_info:
+                myfile.write(str(row) + " " + str(col) + ' ' + str(dist) + '\n')
+
         frame_idx += 1
-
-
     print('In total {} images'.format(frame_idx))

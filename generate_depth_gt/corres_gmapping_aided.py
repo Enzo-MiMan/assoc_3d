@@ -16,11 +16,13 @@ output:
 import open3d as o3d
 import numpy as np
 import shutil
+import time
 from os.path import join
 from sklearn.neighbors import NearestNeighbors
 import matplotlib.pyplot as plt
 import yaml
 import os
+from pcl2depth import velo_points_2_pano
 from timestamp_match_mm_gmapping import timestamp_match
 from gmapping_R_T_from_csv import gmapping_TR
 
@@ -97,32 +99,18 @@ def nearest_neighbor(pc1, pc2):
     return distances.ravel(), indices.ravel()
 
 
-def save_assoc_mmpcl(sample_src_indices, sample_dst_indices, src_mm_ts, dst_mm_ts):
 
-        assert len(sample_src_indices) == len(sample_dst_indices)
+def depth_gt(frame, timestamp, dir_path, cfg):
 
-        mm_src_collect = read_mm_pcl(src_mm_ts)
-        mm_dst_collect = read_mm_pcl(dst_mm_ts)
+    # only select those points with the certain range (in meters) - 5.12 meter for this TI board
+    eff_rows_idx = (frame[:, 0] ** 2 + frame[:, 1] ** 2) ** 0.5 < cfg['pcl2depth']['mmwave_dist_thre']
+    pano_img, point_info = velo_points_2_pano(frame[eff_rows_idx, :], cfg['pcl2depth']['v_res'], cfg['pcl2depth']['h_res'],
+                                  v_fov, h_fov, cfg['pcl2depth']['max_v'], depth=True)
 
-        sample_src = mm_src_collect[sample_src_indices, :]
-        sample_dst = mm_dst_collect[sample_dst_indices, :]
-
-        # draw_matplotlib(sample_src_collect, sample_dst_collect)
-        # draw_o3d(mm_dst_calcul, mm_dst_collect)
-
-        l1 = ''
-        l2 = ''
-        for point in sample_src:
-            l1 = (l1 + str(point[0]) + ' ' + str(point[1]) + ' ' + str(point[2]) + ' ')
-
-        for point in sample_dst:
-            l2 = (l2 + str(point[0]) + ' ' + str(point[1]) + ' ' + str(point[2]) + ' ')
-
-        with open(join(data_dir, str(sequence), 'mm_src_gt_3d.txt'), 'a+') as myfile:
-            myfile.write(str(src_mm_ts) + ' ' + l1 + '\n')
-
-        with open(join(data_dir, str(sequence), 'mm_dts_gt_3d.txt'), 'a+') as myfile:
-            myfile.write(str(dst_mm_ts) + ' ' + l2 + '\n')
+    pixel_coord_file = join(dir_path, '{}.txt'.format(timestamp))
+    with open(pixel_coord_file, 'a+') as myfile:
+        for row, col, dist in point_info:
+            myfile.write(str(row) + " " + str(col) + ' ' + str(dist) + '\n')
 
 
 
@@ -140,22 +128,15 @@ if __name__ == '__main__':
     sequence_names = cfg['radar']['all_sequences']
     gap = cfg['radar']['gap']
     DISTANCE_THRESHOLD = cfg['radar']['DISTANCE_THRESHOLD']
+    v_fov = tuple(map(int, cfg['pcl2depth']['v_fov'][1:-1].split(',')))
+    h_fov = tuple(map(int, cfg['pcl2depth']['h_multi_fov'][1:-1].split(',')))
 
 
-    for sequence in sequence_names:
-
-        file_src = join(data_dir, str(sequence), 'mm_src_gt_3d.txt')
-        if os.path.exists(file_src):
-            os.remove(file_src)
-
-        file_dst = join(data_dir, str(sequence), 'mm_dts_gt_3d.txt')
-        if os.path.exists(file_dst):
-            os.remove(file_dst)
+    for sequence in exp_names:
 
         ts_matches = timestamp_match(data_dir, sequence, gap)
         gmap_T, gmap_R = gmapping_TR(data_dir, sequence)
 
-        num_match_pc = []
         for i in range(1, len(ts_matches)):
 
             src_mm_ts, src_gmap_ts = ts_matches[i, :]
@@ -178,8 +159,53 @@ if __name__ == '__main__':
             if len(sample_dst_indices) < 3 or len(sample_src_indices) < 3:
                 continue
 
-            # save the intersection points separately (correspondence point cloud)
-            save_assoc_mmpcl(sample_src_indices, sample_dst_indices, src_mm_ts, dst_mm_ts)
+            mm_src_collect = read_mm_pcl(src_mm_ts)
+            mm_dst_collect = read_mm_pcl(dst_mm_ts)
 
-        print('finished the', sequence, 'processing')
+            sample_src = mm_src_collect[sample_src_indices, :]
+            sample_dst = mm_dst_collect[sample_dst_indices, :]
+
+
+            # ------------------------- pcl to depth -------------------------
+
+
+            src_gt_indices = join(data_dir, str(sequence), 'depth_gt_src')
+            dst_gt_indices = join(data_dir, str(sequence), 'depth_gt_dst')
+
+            if os.path.exists(src_gt_indices):
+                shutil.rmtree(src_gt_indices)
+                time.sleep(5)
+                os.makedirs(src_gt_indices)
+            else:
+                os.makedirs(src_gt_indices)
+
+            if os.path.exists(dst_gt_indices):
+                shutil.rmtree(dst_gt_indices)
+                time.sleep(5)
+                os.makedirs(dst_gt_indices)
+            else:
+                os.makedirs(dst_gt_indices)
+
+            depth_gt(sample_src, src_mm_ts, src_gt_indices, cfg)
+            depth_gt(sample_dst, dst_mm_ts, dst_gt_indices, cfg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

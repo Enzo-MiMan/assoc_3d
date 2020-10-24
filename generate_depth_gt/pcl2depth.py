@@ -1,14 +1,5 @@
-from glob import glob
-#mport configs
-import os
-#from load_binary_scan import load_from_bin
-#from tqdm import tqdm
 import numpy as np
-from shutil import copy2
-#import matplotlib.pyplot as plt
-#import cv2
-#from IPython.display import clear_output
-import sys
+import pandas as pd
 
 
 def normalize_depth(val, min_v, max_v):
@@ -77,22 +68,21 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
     y_fine_tune = 1
     y_img = np.trunc(y_img + y_offset + y_fine_tune).astype(np.int32)
 
-    a = np.logical_and(y_img!=0, y_img!=15)
-    b = np.logical_and(x_img!=0, x_img!=127)
-    x_img = x_img[np.logical_and(a, b)]
-    y_img = y_img[np.logical_and(a, b)]
-    dist = dist[np.logical_and(a, b)]
-
 
     if depth:
         # nomalize distance value & convert to depth map
-        rgb = normalize_depth(dist, min_v=0, max_v=max_v)
+        dist = normalize_depth(dist, min_v=0, max_v=max_v)
     else:
-        rgb = normalize_val(dist, min_v=0, max_v=max_v)
-
+        dist = normalize_val(dist, min_v=0, max_v=max_v)
 
     # array to img
     img = np.zeros([y_size + 1, x_size + 2], dtype=np.uint8)
-    img[y_img, x_img] = rgb
+    img[y_img, x_img] = dist
 
-    return img
+    point_info = np.array([y_img, x_img, dist]).T
+
+    df = pd.DataFrame(point_info, columns=['row', 'col', 'dist'])
+    df.drop_duplicates(subset=['row', 'col'], keep='last', inplace=True)
+    point_info = np.array(df)
+
+    return img, point_info
