@@ -8,25 +8,21 @@ parameter:
     gap = 4   # read from config.yaml
 
 output:
-    source point cloud:  mm_src_GA_sample.txt
-    matched destination point cloud:  mm_dts_GA_sample.txt
+    source point cloud:  mm_src_gt_3d.txt
+    matched destination point cloud:  mm_dst_gt_3d.txt
 
 """
 
 import open3d as o3d
 import numpy as np
-import re
+import shutil
 from os.path import join
 from sklearn.neighbors import NearestNeighbors
 import matplotlib.pyplot as plt
 import yaml
 import os
-from pcl_assoc.timestamp_match_mm_gmapping import timestamp_match
-from pcl_assoc.gmapping_R_T_from_csv import gmapping_TR
-
-
-
-
+from timestamp_match_mm_gmapping import timestamp_match
+from gmapping_R_T_from_csv import gmapping_TR
 
 
 def draw_matplotlib(src, dst):
@@ -128,7 +124,7 @@ def save_assoc_mmpcl(sample_src_indices, sample_dst_indices, src_mm_ts, dst_mm_t
         with open(join(data_dir, str(sequence), 'mm_dts_gt_3d.txt'), 'a+') as myfile:
             myfile.write(str(dst_mm_ts) + ' ' + l2 + '\n')
 
-        print('finished the',sequence,'processing')
+
 
 
 if __name__ == '__main__':
@@ -148,11 +144,18 @@ if __name__ == '__main__':
 
     for sequence in sequence_names:
 
+        file_src = join(data_dir, str(sequence), 'mm_src_gt_3d.txt')
+        if os.path.exists(file_src):
+            os.remove(file_src)
+
+        file_dst = join(data_dir, str(sequence), 'mm_dts_gt_3d.txt')
+        if os.path.exists(file_dst):
+            os.remove(file_dst)
+
         ts_matches = timestamp_match(data_dir, sequence, gap)
         gmap_T, gmap_R = gmapping_TR(data_dir, sequence)
 
         num_match_pc = []
-
         for i in range(1, len(ts_matches)):
 
             src_mm_ts, src_gmap_ts = ts_matches[i, :]
@@ -172,9 +175,12 @@ if __name__ == '__main__':
             sample_dst_indices = np.reshape(np.where(distances < DISTANCE_THRESHOLD), (-1))
             sample_src_indices = pc_match[sample_dst_indices, 1]
 
-            assert len(sample_src_indices) >= 3
+            if len(sample_dst_indices) < 3 or len(sample_src_indices) < 3:
+                print('in sequence:', sequence, ', src_mm_ts:', src_mm_ts, 'match with dst_mm_ts:', dst_mm_ts, ', the intersections are less than 3.')
+                continue
 
             # save the intersection points separately (correspondence point cloud)
             save_assoc_mmpcl(sample_src_indices, sample_dst_indices, src_mm_ts, dst_mm_ts)
 
-        num_match_pc = np.array(num_match_pc)
+        print('finished the', sequence, 'processing')
+
