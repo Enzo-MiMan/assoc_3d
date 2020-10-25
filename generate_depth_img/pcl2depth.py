@@ -79,10 +79,4 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
     img = np.zeros([y_size + 1, x_size + 2], dtype=np.uint8)
     img[y_img, x_img] = dist
 
-    point_info = np.array([y_img, x_img, dist]).T
-
-    df = pd.DataFrame(point_info, columns=['row', 'col', 'dist'])
-    df.drop_duplicates(subset=['row', 'col'], keep='last', inplace=True)
-    point_info = np.array(df)
-
-    return img, point_info
+    return img

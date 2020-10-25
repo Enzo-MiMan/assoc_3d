@@ -192,16 +192,6 @@ for sequence_name in exp_names:
     else:
         os.makedirs(radar_map_dir)
 
-    pixel_coord_dir = join(data_dir, str(sequence_name), 'depth_pixel_coordinate')
-    if os.path.exists(pixel_coord_dir):
-        shutil.rmtree(pixel_coord_dir)
-        time.sleep(5)
-        os.makedirs(pixel_coord_dir)
-    else:
-        os.makedirs(pixel_coord_dir)
-
-
-
     v_fov = tuple(map(int, cfg['pcl2depth']['v_fov'][1:-1].split(',')))
     h_fov = tuple(map(int, cfg['pcl2depth']['h_multi_fov'][1:-1].split(',')))
 
@@ -211,7 +201,7 @@ for sequence_name in exp_names:
 
         # only select those points with the certain range (in meters) - 5.12 meter for this TI board
         eff_rows_idx = (frame[:, 1] ** 2 + frame[:, 0] ** 2) ** 0.5 < cfg['pcl2depth']['mmwave_dist_thre']
-        pano_img, point_info = velo_points_2_pano(frame[eff_rows_idx, :], cfg['pcl2depth']['v_res'], cfg['pcl2depth']['h_res'],
+        pano_img = velo_points_2_pano(frame[eff_rows_idx, :], cfg['pcl2depth']['v_res'], cfg['pcl2depth']['h_res'],
                                       v_fov, h_fov, cfg['pcl2depth']['max_v'], depth=True)
 
         if pano_img.size == 0:
@@ -224,12 +214,6 @@ for sequence_name in exp_names:
 
         img_path = join(radar_map_dir, '{}.png'.format(timestamp))
         cv2.imwrite(img_path, pano_img)
-
-        pixel_coord_file = join(pixel_coord_dir, '{}.txt'.format(timestamp))
-        with open(pixel_coord_file, 'a+') as myfile:
-
-            for row, col, dist in point_info:
-                myfile.write(str(row) + " " + str(col) + ' ' + str(dist) + '\n')
 
         frame_idx += 1
     print('In total {} images'.format(frame_idx))
