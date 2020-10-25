@@ -68,7 +68,7 @@ def predict_next_pose(src_mm_ts, dst_mm_ts, src_gmap_ts, dst_gmap_ts, gmap_T, gm
     second_index = np.array(np.where(gmap_T[:, 0] == src_gmap_ts))[0, 0]
 
     # predict the pose of mm-wave destination point cloud
-    for k in range(second_index - first_index):
+    for k in range(1, second_index-first_index+1):
         t = np.reshape(gmap_T[first_index + k, 1:4], (3, 1))
         R = np.reshape(gmap_R[first_index + k, 1:10], (3, 3))
 
@@ -132,10 +132,29 @@ if __name__ == '__main__':
     h_fov = tuple(map(int, cfg['pcl2depth']['h_multi_fov'][1:-1].split(',')))
 
 
-    for sequence in exp_names:
+    for sequence in sequence_names:
 
         ts_matches = timestamp_match(data_dir, sequence, gap)
         gmap_T, gmap_R = gmapping_TR(data_dir, sequence)
+
+        src_gt_indices = join(data_dir, str(sequence), 'depth_gt_src')
+        dst_gt_indices = join(data_dir, str(sequence), 'depth_gt_dst')
+
+        if os.path.exists(src_gt_indices):
+            shutil.rmtree(src_gt_indices)
+            time.sleep(5)
+            os.makedirs(src_gt_indices)
+        else:
+            os.makedirs(src_gt_indices)
+
+        if os.path.exists(dst_gt_indices):
+            shutil.rmtree(dst_gt_indices)
+            time.sleep(5)
+            os.makedirs(dst_gt_indices)
+        else:
+            os.makedirs(dst_gt_indices)
+
+        # ------------------------- pcl to depth -------------------------
 
         for i in range(1, len(ts_matches)):
 
@@ -164,27 +183,6 @@ if __name__ == '__main__':
 
             sample_src = mm_src_collect[sample_src_indices, :]
             sample_dst = mm_dst_collect[sample_dst_indices, :]
-
-
-            # ------------------------- pcl to depth -------------------------
-
-
-            src_gt_indices = join(data_dir, str(sequence), 'depth_gt_src')
-            dst_gt_indices = join(data_dir, str(sequence), 'depth_gt_dst')
-
-            if os.path.exists(src_gt_indices):
-                shutil.rmtree(src_gt_indices)
-                time.sleep(5)
-                os.makedirs(src_gt_indices)
-            else:
-                os.makedirs(src_gt_indices)
-
-            if os.path.exists(dst_gt_indices):
-                shutil.rmtree(dst_gt_indices)
-                time.sleep(5)
-                os.makedirs(dst_gt_indices)
-            else:
-                os.makedirs(dst_gt_indices)
 
             depth_gt(sample_src, src_mm_ts, src_gt_indices, cfg)
             depth_gt(sample_dst, dst_mm_ts, dst_gt_indices, cfg)
