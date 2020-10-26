@@ -81,7 +81,6 @@ data_dir = cfg['base_conf']['data_base']
 exp_names = cfg['radar']['exp_name']
 sequence_names = cfg['radar']['all_sequences']
 
-
 middle_transform = np.array(cfg['radar']['translation_matrix']['middle'])
 left_transform = np.array(cfg['radar']['translation_matrix']['left'])
 right_transform = np.array(cfg['radar']['translation_matrix']['right'])

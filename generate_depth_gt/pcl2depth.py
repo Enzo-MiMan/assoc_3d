@@ -29,11 +29,24 @@ def in_v_range_points(d, z, fov):
     return np.logical_and(np.arctan2(z, d) < (fov[1] * np.pi / 180), np.arctan2(z, d) > (fov[0] * np.pi / 180))
 
 
-def fov_setting(points, x, y, z, dist, h_fov, v_fov):
+def fov_setting(x, y, z, h_fov, v_fov):
     """ filter points based on h,v FOV  """
     h_points = in_h_range_points(x, y, h_fov)
     v_points = in_v_range_points(np.sqrt(x ** 2 + y ** 2), z, v_fov)
-    return points[np.logical_and(h_points, v_points)]
+
+    return np.logical_and(h_points, v_points)
+
+
+def filter_point(points, v_fov, h_fov):
+    # Projecting to 2D
+    x = points[:, 0]
+    y = points[:, 1]
+    z = points[:, 2]
+
+    """ filter points based on h,v FOV  """
+    valid_index = fov_setting(x, y, z, h_fov, v_fov)
+
+    return valid_index
 
 
 
@@ -50,9 +63,10 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
     y_img = -(np.arctan2(z, np.sqrt(x ** 2 + y ** 2)) / (v_res * (np.pi / 180)))
 
     """ filter points based on h,v FOV  """
-    x_img = fov_setting(x_img, x, y, z, dist, h_fov, v_fov)
-    y_img = fov_setting(y_img, x, y, z, dist, h_fov, v_fov)
-    dist = fov_setting(dist, x, y, z, dist, h_fov, v_fov)
+    valid_index = fov_setting(x, y, z, h_fov, v_fov)
+    x_img = x_img[valid_index]
+    y_img = y_img[valid_index]
+    dist = dist[valid_index]
 
     """ directly return dist if dist empty  """
     if dist.size == 0:
@@ -68,7 +82,6 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
     y_fine_tune = 1
     y_img = np.trunc(y_img + y_offset + y_fine_tune).astype(np.int32)
 
-
     if depth:
         # nomalize distance value & convert to depth map
         dist = normalize_depth(dist, min_v=0, max_v=max_v)
@@ -80,9 +93,5 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
     img[y_img, x_img] = dist
 
     point_info = np.array([y_img, x_img, dist]).T
-
-    # df = pd.DataFrame(point_info, columns=['row', 'col', 'dist'])
-    # df.drop_duplicates(subset=['row', 'col'], keep='last', inplace=True)
-    # point_info = np.array(df)
 
     return img, point_info

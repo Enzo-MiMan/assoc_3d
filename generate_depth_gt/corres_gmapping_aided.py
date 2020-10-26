@@ -22,7 +22,7 @@ from sklearn.neighbors import NearestNeighbors
 import matplotlib.pyplot as plt
 import yaml
 import os
-from pcl2depth import velo_points_2_pano
+from pcl2depth import filter_point, velo_points_2_pano
 from timestamp_match_mm_gmapping import timestamp_match
 from gmapping_R_T_from_csv import gmapping_TR
 
@@ -102,10 +102,7 @@ def nearest_neighbor(pc1, pc2):
 
 def depth_gt(frame, timestamp, dir_path, cfg):
 
-    # only select those points with the certain range (in meters) - 5.12 meter for this TI board
-    eff_rows_idx = (frame[:, 0] ** 2 + frame[:, 1] ** 2) ** 0.5 < cfg['pcl2depth']['mmwave_dist_thre']
-    pano_img, point_info = velo_points_2_pano(frame[eff_rows_idx, :], cfg['pcl2depth']['v_res'], cfg['pcl2depth']['h_res'],
-                                  v_fov, h_fov, cfg['pcl2depth']['max_v'], depth=True)
+    pano_img, point_info = velo_points_2_pano(frame, cfg['pcl2depth']['v_res'], cfg['pcl2depth']['h_res'], v_fov, h_fov, cfg['pcl2depth']['max_v'], depth=True)
 
     pixel_coord_file = join(dir_path, '{}.txt'.format(timestamp))
     with open(pixel_coord_file, 'a+') as myfile:
@@ -132,27 +129,27 @@ if __name__ == '__main__':
     h_fov = tuple(map(int, cfg['pcl2depth']['h_multi_fov'][1:-1].split(',')))
 
 
-    for sequence in sequence_names:
+    for sequence in exp_names:
 
         ts_matches = timestamp_match(data_dir, sequence, gap)
         gmap_T, gmap_R = gmapping_TR(data_dir, sequence)
 
-        src_gt_indices = join(data_dir, str(sequence), 'depth_gt_src')
-        dst_gt_indices = join(data_dir, str(sequence), 'depth_gt_dst')
+        src_gt_files = join(data_dir, str(sequence), 'depth_gt_src')
+        dst_gt_files = join(data_dir, str(sequence), 'depth_gt_dst')
 
-        if os.path.exists(src_gt_indices):
-            shutil.rmtree(src_gt_indices)
+        if os.path.exists(src_gt_files):
+            shutil.rmtree(src_gt_files)
             time.sleep(5)
-            os.makedirs(src_gt_indices)
+            os.makedirs(src_gt_files)
         else:
-            os.makedirs(src_gt_indices)
+            os.makedirs(src_gt_files)
 
-        if os.path.exists(dst_gt_indices):
-            shutil.rmtree(dst_gt_indices)
+        if os.path.exists(dst_gt_files):
+            shutil.rmtree(dst_gt_files)
             time.sleep(5)
-            os.makedirs(dst_gt_indices)
+            os.makedirs(dst_gt_files)
         else:
-            os.makedirs(dst_gt_indices)
+            os.makedirs(dst_gt_files)
 
         # ------------------------- pcl to depth -------------------------
 
@@ -178,14 +175,26 @@ if __name__ == '__main__':
             if len(sample_dst_indices) < 3 or len(sample_src_indices) < 3:
                 continue
 
-            mm_src_collect = read_mm_pcl(src_mm_ts)
             mm_dst_collect = read_mm_pcl(dst_mm_ts)
+            mm_src_collect = read_mm_pcl(src_mm_ts)
 
-            sample_src = mm_src_collect[sample_src_indices, :]
             sample_dst = mm_dst_collect[sample_dst_indices, :]
+            sample_src = mm_src_collect[sample_src_indices, :]
 
-            depth_gt(sample_src, src_mm_ts, src_gt_indices, cfg)
-            depth_gt(sample_dst, dst_mm_ts, dst_gt_indices, cfg)
+            # only select those points with the certain range (in meters) - 5.12 meter for this TI board
+            eff_rows_idx_dst = (sample_dst[:, 0] ** 2 + sample_dst[:, 1] ** 2) ** 0.5 < cfg['pcl2depth']['mmwave_dist_thre']
+            eff_rows_idx_src = (sample_src[:, 0] ** 2 + sample_src[:, 1] ** 2) ** 0.5 < cfg['pcl2depth']['mmwave_dist_thre']
+
+            eff_points_dst = sample_dst[eff_rows_idx_dst & eff_rows_idx_src, :]
+            eff_points_src = sample_src[eff_rows_idx_dst & eff_rows_idx_src, :]
+
+            valid_index_dst = filter_point(eff_points_dst, v_fov, h_fov)
+            valid_index_src = filter_point(eff_points_src, v_fov, h_fov)
+
+            depth_gt(eff_points_dst[valid_index_dst & valid_index_src, :], dst_mm_ts, dst_gt_files, cfg)
+            depth_gt(eff_points_src[valid_index_dst & valid_index_src, :], src_mm_ts, src_gt_files, cfg)
+
+
 
 
 
