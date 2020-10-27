@@ -34,8 +34,8 @@ def loss_function(dst_descriptor, dst_scores, src_descriptor, src_scores, gt_dst
         gt_dst = gt_dst.to(device=device)
         gt_src = gt_src.to(device=device)
 
-        temp = torch.zeros(gt_dst.size(0))
-        score_sum = 0
+        temp = torch.zeros(gt_dst.size(0)).to(device)
+        score_sum = torch.zeros(1).to(device)
         for point_index in range(gt_dst.size(0)):
 
             dst_x, dst_y = gt_dst[point_index]
@@ -50,7 +50,7 @@ def loss_function(dst_descriptor, dst_scores, src_descriptor, src_scores, gt_dst
             n2 = torch.max(torch.cosine_similarity(d_dst.unsqueeze(1).unsqueeze(1), src_descriptor[idx_in_batch, :, :, :], dim=0))
             n = torch.max(n1, n2)
 
-            m = torch.max(torch.zeros(1), n-p)
+            m = torch.max(torch.zeros(1).to(device), n-p)
 
             score_dst = dst_scores[idx_in_batch, :, dst_x, dst_y]
             score_src = src_scores[idx_in_batch, :, dst_x, dst_y]
@@ -58,8 +58,9 @@ def loss_function(dst_descriptor, dst_scores, src_descriptor, src_scores, gt_dst
             score_sum += score_dst * score_src
             temp[point_index] = score_dst * score_src * m
 
-        loss[idx_in_batch] = sum(temp / score_sum)
+        loss[idx_in_batch] = torch.sum(temp / score_sum)
     loss_ave = torch.mean(loss)
+
     return loss_ave
 
 

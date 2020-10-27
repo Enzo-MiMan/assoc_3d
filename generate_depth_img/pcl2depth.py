@@ -53,6 +53,7 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
     x_img = fov_setting(x_img, x, y, z, dist, h_fov, v_fov)
     y_img = fov_setting(y_img, x, y, z, dist, h_fov, v_fov)
     dist = fov_setting(dist, x, y, z, dist, h_fov, v_fov)
+    points = fov_setting(points, x, y, z, dist, h_fov, v_fov)
 
     """ directly return dist if dist empty  """
     if dist.size == 0:
@@ -78,5 +79,6 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
     # array to img
     img = np.zeros([y_size + 1, x_size + 2], dtype=np.uint8)
     img[y_img, x_img] = dist
+    index = np.array([y_img, x_img, dist]).T
 
-    return img
+    return img, index, points[:, :3]

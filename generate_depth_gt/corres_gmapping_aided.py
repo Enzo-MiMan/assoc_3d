@@ -136,7 +136,7 @@ if __name__ == '__main__':
 
         src_gt_files = join(data_dir, str(sequence), 'depth_gt_src')
         dst_gt_files = join(data_dir, str(sequence), 'depth_gt_dst')
-
+ 
         if os.path.exists(src_gt_files):
             shutil.rmtree(src_gt_files)
             time.sleep(5)
