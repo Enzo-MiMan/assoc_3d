@@ -59,7 +59,7 @@ def train(train_loader, model, optimizer, epoch, writer):
         writer.add_scalar('batch_loss', batch_loss)
 
 
-        if i % 50 == 0:
+        if i % 20 == 0:
             save_checkpoint({
                 'epoch': epoch + 1,
                 'state_dict': model.state_dict(),
@@ -149,8 +149,8 @@ if __name__ == "__main__":
 
     model = UNet()
     model.to(device=device)
-    # checkpoint = torch.load('checkpoint_finally_full_image_500steps.pth', map_location = torch.device('cuda'))
-    # model.load_state_dict(checkpoint['state_dict'])
+    checkpoint = torch.load('checkpoint.pth', map_location = torch.device('cuda'))
+    model.load_state_dict(checkpoint['state_dict'])
 
     # --------------------------- define loss function and optimizer -------------------------
 
