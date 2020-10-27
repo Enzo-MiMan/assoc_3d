@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
         translation_file = os.path.join(os.path.dirname(project_dir), 'indoor_data/2019-11-28-15-43-32/predicted_translation.txt')
         with open(translation_file, 'a+') as myfile:
-                myfile.write(str(translation[0,0].item()) + " " + str(translation[1,0].item()) + str(translation[2,0].item()) + '\n')
+                myfile.write(str(translation[0, 0].item()) + " " + str(translation[1, 0].item()) + ' ' + str(translation[2, 0].item()) + '\n')
 
 
 
