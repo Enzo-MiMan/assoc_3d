@@ -79,6 +79,6 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
     # array to img
     img = np.zeros([y_size + 1, x_size + 2], dtype=np.uint8)
     img[y_img, x_img] = dist
-    index = np.array([y_img, x_img, dist]).T
+    pixel_coord = np.array([y_img, x_img, dist]).T
 
-    return img, index, points[:, :3]
+    return img, pixel_coord, points[:, :3]
