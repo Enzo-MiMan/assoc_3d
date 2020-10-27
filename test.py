@@ -73,8 +73,8 @@ if __name__ == "__main__":
         # dst_scores = dst_descriptor.detach().numpy()
         # src_scores = src_scores.detach().numpy()
 
-        point_dst_file = os.path.join(os.path.dirname(project_dir), 'indoor_data/2019-11-28-15-43-32/all_point_depth_pixel_coordinate', dst_timestamp[0]+'.txt')
-        point_src_file = os.path.join(os.path.dirname(project_dir), 'indoor_data/2019-11-28-15-43-32/all_point_depth_pixel_coordinate', src_timestamp[0]+'.txt')
+        point_dst_file = os.path.join(os.path.dirname(project_dir), 'indoor_data/2019-11-28-15-43-32/point_pixel_location', dst_timestamp[0]+'.txt')
+        point_src_file = os.path.join(os.path.dirname(project_dir), 'indoor_data/2019-11-28-15-43-32/point_pixel_location', src_timestamp[0]+'.txt')
 
         dst_world_coord_file = os.path.join(os.path.dirname(project_dir), 'indoor_data/2019-11-28-15-43-32/point_world_location', dst_timestamp[0] + '.txt')
         src_world_coord_file = os.path.join(os.path.dirname(project_dir), 'indoor_data/2019-11-28-15-43-32/point_world_location', src_timestamp[0] + '.txt')

@@ -199,7 +199,7 @@ for sequence_name in sequence_names:
     else:
         os.makedirs(point_world_location_dir)
 
-    point_pixel_location_dir = join(data_dir, str(sequence_name), 'point_pixel_location_dir')
+    point_pixel_location_dir = join(data_dir, str(sequence_name), 'point_pixel_location')
     if os.path.exists(point_pixel_location_dir):
         shutil.rmtree(point_pixel_location_dir)
         time.sleep(5)
