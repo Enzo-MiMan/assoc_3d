@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 
 def normalize_depth(val, min_v, max_v):
