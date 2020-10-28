@@ -16,8 +16,8 @@ with open(join(project_dir, 'config.yaml'), 'r') as f:
 sequence_names = cfg['base_conf']['data_base']
 
 
-def read_gt(timestamp, batch_i):
-    gt_file = os.path.join(sequence_names, 'enzo_depth_gt', timestamp[batch_i].item() + 'txt')
+def read_gt(depth_gt, timestamp, batch_i):
+    gt_file = os.path.join(sequence_names, depth_gt, timestamp[batch_i].item() + 'txt')
     gt = np.loadtxt(gt_file, delimiter=' ', usecols=[0, 1], dtype=np.int64)
     gt = torch.tensor(gt)
     return gt
@@ -27,8 +27,8 @@ def loss_function(dst_descriptors, dst_scores, src_descriptors, src_scores, dst_
     loss = torch.zeros(dst_descriptors.size(0))
     for batch_i in range(dst_descriptors.size(0)):
 
-        gt_dst = read_gt(dst_timestamp, batch_i)
-        gt_src = read_gt(src_timestamp, batch_i)
+        gt_dst = read_gt('depth_gt_dst', dst_timestamp, batch_i)
+        gt_src = read_gt('depth_gt_src', src_timestamp, batch_i)
 
         temp = torch.zeros(gt_dst.size(0)).to(device)
         score_sum = torch.zeros(1).to(device)

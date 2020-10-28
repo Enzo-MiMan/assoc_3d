@@ -27,26 +27,6 @@ from timestamp_match_mm_gmapping import timestamp_match
 from gmapping_R_T_from_csv import gmapping_TR
 
 
-def draw_matplotlib(src, dst):
-    fig = plt.figure(figsize=(20, 12))
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(src[:, 0], src[:, 1], src[:, 2], s=10, c='r', marker='o')
-    ax.scatter(dst[:, 0], dst[:, 1], dst[:, 2], s=10, c='b', marker='o')
-    plt.show()
-
-
-def draw_o3d(src, dst):
-    pcd_src = o3d.geometry.PointCloud()
-    pcd_dst = o3d.geometry.PointCloud()
-
-    pcd_src.points = o3d.utility.Vector3dVector(src)
-    pcd_dst.points = o3d.utility.Vector3dVector(dst)
-
-    pcd_src.paint_uniform_color([1, 0.706, 0])
-    pcd_dst.paint_uniform_color([0, 0.651, 0.929])
-    o3d.visualization.draw_geometries([pcd_src, pcd_dst])
-
-
 
 def read_mm_pcl(mm_ts):
 

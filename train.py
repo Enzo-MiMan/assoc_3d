@@ -57,7 +57,7 @@ if __name__ == "__main__":
     with open(join(project_dir, 'config.yaml'), 'r') as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
-    train_data_dir = os.path.join(os.path.dirname(project_dir), 'indoor_data/2019-11-28-15-43-32')
+    train_data_dir = os.path.join(os.path.dirname(project_dir), 'indoor_data/2019-10-27-14-28-21')
     valid_data_dir = os.path.join(os.path.dirname(project_dir), 'indoor_data/2019-11-28-15-43-32')
     train_data = Scan_Loader(train_data_dir)
     valid_data = Scan_Loader(valid_data_dir)

@@ -9,7 +9,8 @@ import numpy as np
 class Scan_Loader():
     def __init__(self, data_path):
         self.data_path = data_path
-        self.gt_files = sorted(glob.glob(join(data_path, 'depth_gt_dst/*.txt')))
+        self.gt_files_dst = sorted(glob.glob(join(data_path, 'depth_gt_dst/*.txt')))
+        self.gt_files_src = sorted(glob.glob(join(data_path, 'depth_gt_src/*.txt')))
 
     def read_img(self, gt_file):
         file_path, full_flname = os.path.split(gt_file)
@@ -23,8 +24,8 @@ class Scan_Loader():
     def __getitem__(self, index):
 
         # ------------ read gt ------------
-        gt_dst_file = self.gt_files[index]
-        gt_src_file = self.gt_files[index+1]
+        gt_dst_file = self.gt_files_dst[index]
+        gt_src_file = self.gt_files_src[index]
 
         # ------------ read image pair ------------
         image_dst, dst_timestamp = self.read_img(gt_dst_file)
