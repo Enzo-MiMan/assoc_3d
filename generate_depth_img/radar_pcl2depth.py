@@ -51,8 +51,6 @@ middle_transform = np.array(cfg['radar']['translation_matrix']['middle'])
 left_transform = np.array(cfg['radar']['translation_matrix']['left'])
 right_transform = np.array(cfg['radar']['translation_matrix']['right'])
 
-align_interval = np.array(cfg['radar']['align_interval'])
-
 v_fov = tuple(map(int, cfg['pcl2depth']['v_fov'][1:-1].split(',')))
 h_fov = tuple(map(int, cfg['pcl2depth']['h_multi_fov'][1:-1].split(',')))
 
@@ -62,7 +60,7 @@ topic_right = '_slash_mmWaveDataHdl_slash_RScan_right'
 
 left_quaternion = Quaternion(axis=[0, 0, 1], angle=math.pi / 2)
 right_quaternion = Quaternion(axis=[0, 0, 1], angle=-math.pi / 2)
-
+align_interval = 5e7
 
 
 for sequence_name in exp_names:

@@ -1,13 +1,10 @@
 import sys
-sys.path.append("..")
 from lib.net_parts import *
 import torch.nn.functional as F
 import torch
-
+sys.path.append("..")
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-dtype = torch.cuda.FloatTensor
-dtype_long = torch.cuda.LongTensor
 
 
 class UNet(nn.Module):
@@ -29,18 +26,18 @@ class UNet(nn.Module):
         x1 = self.inc(img)     # torch.Size([10, 8, 16, 128])
         x2 = self.down1(x1)    # torch.Size([10, 16, 8, 64])
         x3 = self.down2(x2)    # torch.Size([10, 32, 4, 32])
-        x = self.up1(x3, x2)    # torch.Size([10, 16, 8, 64])
+        x = self.up1(x3, x2)   # torch.Size([10, 16, 8, 64])
         x = self.up2(x, x1)    # torch.Size([10, 8, 16, 128])
         logits = self.outc(x)  # torch.Size([10, 1, 16, 128])
 
         # calculate descriptors
         x1 = self.descrip1(x2, x1)
-        descriptor = self.descrip2(x3, x1)  # torch.Size([N, 56, 16, 128])
-        descriptor = F.normalize(descriptor, p=2, dim=1)  # torch.Size([248])
+        descriptors = self.descrip2(x3, x1)  # torch.Size([N, 56, 16, 128])
+        descriptors = F.normalize(descriptors, p=2, dim=1)  # torch.Size([248])
 
 
         # calculate socres
         scores = torch.sigmoid(logits)  # torch.Size([N, 1, 16, 128])
 
-        return descriptor, scores
+        return descriptors, scores
 
