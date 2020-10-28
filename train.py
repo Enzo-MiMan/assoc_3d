@@ -13,10 +13,9 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 project_dir = os.path.dirname(os.getcwd())  # /data/greyostrich/not-backed-up/aims/aimsre/xxlu/assoc/workspace
 
 
-def save_checkpoint(state, is_best, filename):
+def save_checkpoint(state, filename):
     torch.save(state, filename)
-    if is_best:
-        shutil.copyfile(filename, 'model_best_' + filename)
+    shutil.copyfile(filename, 'model_best_' + filename)
 
 
 def train(train_loader, model, optimizer, epoch, writer):
@@ -32,61 +31,21 @@ def train(train_loader, model, optimizer, epoch, writer):
         src_descriptors, src_scores = model(image_src)
 
         batch_loss = loss_function(dst_descriptors, dst_scores, src_descriptors, src_scores, dst_timestamp, src_timestamp)
-
-        # transformation error
-        # t_error_mean, r_error_mean = transformation_error(pred_rotat, pred_trans, label_rotat, label_trans)
         print('batch_loss :', batch_loss)
-
 
         # compute gradient and do optimizer step
         optimizer.zero_grad()
         batch_loss.backward()
         optimizer.step()
 
-        # save and plot
+        # write tensorboardX
         writer.add_scalar('batch_loss', batch_loss)
 
         if i % 20 == 0:
             save_checkpoint({
                 'epoch': epoch + 1,
                 'state_dict': model.state_dict(),
-                'best_trans_error': best_trans_error,
-                'best_rotat_error': best_rotat_error,
-                'optimizer': optimizer.state_dict(),
-            }, False, filename='checkpoint.pth')
-    writer.add_scalar('train/train_loss', losses.val, global_step=epoch)
-
-
-def validate(valid_loader, model, epoch, writer):
-
-    model.eval()
-    with torch.no_grad():
-        for i, (image, label_rotat, label_trans) in enumerate(valid_loader):
-            print(i)
-            image = image.to(device=device, dtype=torch.float32)
-            label_rotat = label_rotat[1:,:,:].to(device=device, dtype=torch.float32)
-            label_trans = label_trans[1:,:,:].to(device=device, dtype=torch.float32)
-
-            # compute output
-            pred_rotat, pred_trans = model(image)
-            batch_loss = loss_function(pred_rotat, pred_trans, label_rotat, label_trans)
-
-            # transformation error
-            t_error_mean, r_error_mean = transformation_error(pred_rotat, pred_trans, label_rotat, label_trans)
-
-            print('batch_loss :', batch_loss)
-            print('translation_error_mean:', t_error_mean)
-            print('rotation_error_mean:', r_error_mean, '\n')
-
-            losses.update(batch_loss.item(), label_rotat.size(0))
-            trans.update(t_error_mean, label_rotat.size(0))
-            rotat.update(r_error_mean, label_rotat.size(0))
-
-            writer.add_scalar('translation_error_mean', t_error_mean)
-            writer.add_scalar('rotation_error_mean', r_error_mean)
-            writer.add_scalar('batch_loss', batch_loss)
-    writer.add_scalar('loss/valid_loss', losses.val, global_step=epoch)
-    return t_error_mean, r_error_mean
+            }, filename='checkpoint.pth')
 
 
 if __name__ == "__main__":
@@ -131,10 +90,6 @@ if __name__ == "__main__":
     for epoch in range(epochs):
         # scheduler.step()
         train(train_loader, model, optimizer, epoch, writer)
-
-        # # evaluate on validate dataset
-        # trans_error, rotat_error = validate(valid_loader, model, epoch, writer)
-
     writer.close()
 
 
