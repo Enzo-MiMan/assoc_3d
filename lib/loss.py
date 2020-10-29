@@ -8,16 +8,9 @@ import yaml
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# get config
-project_dir = os.path.dirname(os.getcwd())  # /data/greyostrich/not-backed-up/aims/aimsre/xxlu/assoc/workspace
-with open(join(project_dir, 'config.yaml'), 'r') as f:
-    cfg = yaml.load(f, Loader=yaml.FullLoader)
-
-path = cfg['base_conf']['data_base']
-
 
 def read_gt(depth_gt, timestamp, batch_i, sequence):
-    gt_file = os.path.join(path, sequence, depth_gt, timestamp[batch_i] + '.txt')
+    gt_file = os.path.join("../indoor_data", sequence, depth_gt, timestamp[batch_i] + '.txt')
     gt = np.loadtxt(gt_file, delimiter=' ', usecols=[0, 1], dtype=np.int64)
     gt = torch.tensor(gt)
     return gt
