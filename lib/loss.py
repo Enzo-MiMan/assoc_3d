@@ -5,11 +5,11 @@ import torch
 import yaml
 
 
-project_dir = os.path.dirname(os.getcwd())  # /data/greyostrich/not-backed-up/aims/aimsre/xxlu/assoc/workspace
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # get config
-project_dir = os.getcwd()
+project_dir = os.path.dirname(os.getcwd())  # /data/greyostrich/not-backed-up/aims/aimsre/xxlu/assoc/workspace
 with open(join(project_dir, 'config.yaml'), 'r') as f:
     cfg = yaml.load(f, Loader=yaml.FullLoader)
 
