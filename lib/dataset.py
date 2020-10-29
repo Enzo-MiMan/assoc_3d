@@ -35,7 +35,7 @@ class Scan_Loader():
 
 
     def __len__(self):
-        return len(self.gt_dst_files-1)
+        return len(self.gt_files_dst)-1
 
 
 

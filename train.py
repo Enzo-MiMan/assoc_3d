@@ -18,7 +18,7 @@ def save_checkpoint(state, filename):
     shutil.copyfile(filename, 'model_best_' + filename)
 
 
-def train(train_loader, model, optimizer, epoch, writer):
+def train(train_loader, model, optimizer, epoch, writer, sequence):
 
     model.train()
     for i, (image_dst, image_src, dst_timestamp, src_timestamp) in enumerate(train_loader):
@@ -30,7 +30,7 @@ def train(train_loader, model, optimizer, epoch, writer):
         dst_descriptors, dst_scores = model(image_dst)  # torch.Size([9, 3, 1])  torch.Size([9, 3, 3])
         src_descriptors, src_scores = model(image_src)
 
-        batch_loss = loss_function(dst_descriptors, dst_scores, src_descriptors, src_scores, dst_timestamp, src_timestamp)
+        batch_loss = loss_function(dst_descriptors, dst_scores, src_descriptors, src_scores, dst_timestamp, src_timestamp, sequence)
         print('batch_loss :', batch_loss)
 
         # compute gradient and do optimizer step
@@ -57,8 +57,9 @@ if __name__ == "__main__":
     with open(join(project_dir, 'config.yaml'), 'r') as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
-    train_data_dir = os.path.join(os.path.dirname(project_dir), 'indoor_data/2019-10-27-14-28-21')
-    valid_data_dir = os.path.join(os.path.dirname(project_dir), 'indoor_data/2019-11-28-15-43-32')
+    sequence = '2019-11-28-15-43-32'
+    train_data_dir = os.path.join(os.path.dirname(project_dir), 'indoor_data', sequence)
+    valid_data_dir = os.path.join(os.path.dirname(project_dir), 'indoor_data', sequence)
     train_data = Scan_Loader(train_data_dir)
     valid_data = Scan_Loader(valid_data_dir)
 
@@ -72,8 +73,8 @@ if __name__ == "__main__":
 
     model = UNet()
     model.to(device=device)
-    checkpoint = torch.load('checkpoint.pth', map_location = torch.device('cuda'))
-    model.load_state_dict(checkpoint['state_dict'])
+    #checkpoint = torch.load('checkpoint.pth', map_location = torch.device('cuda'))
+    #model.load_state_dict(checkpoint['state_dict'])
 
     # --------------------------- define loss function and optimizer -------------------------
 
@@ -89,7 +90,7 @@ if __name__ == "__main__":
     best_rotat_error = float('inf')
     for epoch in range(epochs):
         # scheduler.step()
-        train(train_loader, model, optimizer, epoch, writer)
+        train(train_loader, model, optimizer, epoch, writer, sequence)
     writer.close()
 
 
