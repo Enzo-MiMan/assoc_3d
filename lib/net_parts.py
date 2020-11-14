@@ -76,7 +76,6 @@ class OutConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
-
 class Descrip(nn.Module):
     def __init__(self, factor):
         super(Descrip, self).__init__()
@@ -93,33 +92,3 @@ class Descrip(nn.Module):
         x = torch.cat([x2, x1], dim=1)
 
         return x
-
-
-class SpatialSoftmax(nn.Module):
-    """
-    N, C, W, H => C*2 # for each channel, get good point [x,y]
-    """
-
-    def __init__(self, n_rows, n_cols, temperature):
-        super(SpatialSoftmax, self).__init__()
-
-        x_map = np.zeros((n_rows, n_cols))
-        y_map = np.zeros((n_rows, n_cols))
-        for i in range(n_rows):
-            for j in range(n_cols):
-                x_map[i, j] = i
-                y_map[i, j] = j
-        x_map = torch.from_numpy(np.array(x_map.reshape((-1)), np.float32)).to(device)
-        y_map = torch.from_numpy(np.array(y_map.reshape((-1)), np.float32)).to(device)
-        self.temperature = temperature
-        self.x_map = x_map
-        self.y_map = y_map
-
-    def forward(self, x):
-        x = x.reshape(x.shape[0], x.shape[1], x.shape[2] * x.shape[3])  # batch, C, W*H
-        s = F.softmax(x / self.temperature, dim=2)  # batch, C, W*H
-        fp_x = torch.matmul(s, self.x_map)  # batch, C
-        fp_y = torch.matmul(s, self.y_map)  # batch, C
-        s = torch.cat((fp_x, fp_y), 1)
-
-        return s  # batch, C*2

@@ -1,8 +1,7 @@
 import numpy as np
 import os
-from os.path import join
+import torch.nn.functional as F
 import torch
-import yaml
 
 
 
@@ -16,7 +15,7 @@ def read_gt(depth_gt, timestamp, batch_i, sequence):
     return gt
 
 
-def loss_function(dst_descriptors, dst_scores, src_descriptors, src_scores, dst_timestamp, src_timestamp, sequence):
+def d2_loss(dst_descriptors, src_descriptors, dst_timestamp, src_timestamp, sequence):
     loss = torch.zeros(dst_descriptors.size(0))
     for batch_i in range(dst_descriptors.size(0)):
 
@@ -51,4 +50,33 @@ def loss_function(dst_descriptors, dst_scores, src_descriptors, src_scores, dst_
     return loss_mean
 
 
+def triplet_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src):
+    loss = torch.zeros(1)
 
+    for i in range(gt_sampled_locations_src.size(0)):
+
+        src_x, src_y = gt_sampled_locations_src[i, :2]
+        d_src = src_descriptors[0, :, src_x, src_y]
+
+        cosine_distance_negative = 0
+        for j in range(gt_sampled_locations_dst.size(0)):
+
+            if i == j:
+                dst_x, dst_y = gt_sampled_locations_dst[j, :2]
+                d_dst = dst_descriptors[0, :, dst_x, dst_y]
+                cosine_distance_positive = torch.cosine_similarity(d_dst, d_src, dim=0)
+                # eucl_distance = torch.sqrt(torch.sum((d_dst - d_src) ** 2))
+
+            else:
+                dst_x, dst_y = gt_sampled_locations_dst[j, :2]
+                d_dst = dst_descriptors[0, :, dst_x, dst_y]
+                cosine_distance_negative += torch.cosine_similarity(d_dst, d_src, dim=0)
+
+        distance_negative = torch.sum(cosine_distance_negative) / i
+        distance= cosine_distance_positive - distance_negative
+
+        alpha = 5
+        loss += torch.log(1 + torch.exp ** (alpha * distance))
+
+    loss_mean = loss / gt_sampled_locations_src.size(0)
+    return loss_mean

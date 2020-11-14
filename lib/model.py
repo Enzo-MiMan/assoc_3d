@@ -1,10 +1,6 @@
-import sys
 from lib.net_parts import *
 import torch.nn.functional as F
 import torch
-sys.path.append("..")
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class UNet(nn.Module):
@@ -18,8 +14,6 @@ class UNet(nn.Module):
         self.outc = OutConv(8, 1)
         self.descrip1 = Descrip(2)
         self.descrip2 = Descrip(4)
-        self.cell_ss = SpatialSoftmax(4, 16, temperature=0.1)
-        self.dst_ss = SpatialSoftmax(16, 128, temperature=0.1)
 
 
     def forward(self, img):    # torch.Size([10, 1, 16, 128])
@@ -35,9 +29,7 @@ class UNet(nn.Module):
         descriptors = self.descrip2(x3, x1)  # torch.Size([N, 56, 16, 128])
         descriptors = F.normalize(descriptors, p=2, dim=1)  # torch.Size([248])
 
+        return descriptors
 
-        # calculate socres
-        scores = torch.sigmoid(logits)  # torch.Size([N, 1, 16, 128])
 
-        return descriptors, scores
 
