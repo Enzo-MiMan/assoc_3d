@@ -5,7 +5,7 @@ import torch
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def d2_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src):
+def triplet_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src):
     alpha = 5
     distance = torch.tensor(np.array([0], dtype=np.float32), device=device)
 
@@ -39,8 +39,8 @@ def d2_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampl
 
 
 
-def triplet_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src):
-    loss = torch.zeros(1)
+def loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src):
+    loss = torcet_h.zeros(1)
 
     for i in range(gt_sampled_locations_src.size(0)):
 

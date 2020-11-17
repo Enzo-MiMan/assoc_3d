@@ -1,6 +1,6 @@
 base_conf:
     gpu_num: 1
-    data_base: ../../indoor_data
+    data_base: /Users/manmi/Documents/GitHub/indoor_data
     raw_dir: raw
     radar_occ_map: ../../fig/
     map_base: ../../data/maps/
