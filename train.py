@@ -3,17 +3,21 @@ from os.path import join
 import torch
 import numpy as np
 from torch import optim
-import shutil
 import cv2
 from lib.dataset import Scan_Loader, Scan_Loader_NoLabel
-from lib.model import UNet
+from lib.model import U_Net
 from lib.loss import triplet_loss, d2_loss
-import yaml
-from matplotlib import pyplot as plt
 from tensorboardX import SummaryWriter
+import shutil
+
 
 
 def pred_matches(dst_descriptors, src_descriptors, pixel_location_src):
+    """
+    input: the src and dst feature map(description map)
+    input: the recorded src frame pixel locations
+    --->> predict dst frame pixel locations
+    """
 
     location_src = []
     location_dst = []
@@ -45,7 +49,7 @@ def draw_matches(timestamp_dst, image_dst, image_src, location_dst, location_src
         cv2.line(vis, pixel_A, pixel_B, (0, 255, 0), 1)
 
         save_file = join('/Users/manmi/Documents/GitHub/indoor_data/2019-11-28-15-43-32/gt_matched_imgs_line', timestamp_dst + '-' + str(j) + '.png')
-        # cv2.imwrite(save_file, vis)
+        cv2.imwrite(save_file, vis)
         # cv2.imshow('img', vis)
         # cv2.waitKey()
 
@@ -71,11 +75,10 @@ def read_locations(file):
     return np.array(pixel_locations)
 
 
+def train(train_loader, model, optimizer, epoch, train_data_dir, writer):
 
-def train(train_loader, model, optimizer, epoch, sequence, train_data_dir):
 
     model.train()
-    sum = 0
     for i, (timestamp_dst, timestamp_src, image_dst, image_src, image_dst_org, image_src_org) in enumerate(train_loader):
         # print('epoch:', epoch, 'step:', i)
 
@@ -100,27 +103,24 @@ def train(train_loader, model, optimizer, epoch, sequence, train_data_dir):
         gt_sampled_locations_dst = torch.tensor(gt_sampled_locations_dst).to(device=device, dtype=torch.int)
         gt_sampled_locations_src = torch.tensor(gt_sampled_locations_src).to(device=device, dtype=torch.int)
 
-        loss = triplet_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src)
+        # loss = d2_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src)
+        loss = d2_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
         print(loss)
 
-    #     location_dst, location_src = pred_matches(dst_descriptors, src_descriptors, gt_sampled_locations_src)
-    #
-    #     # draw_matches(timestamp_dst[0], image_dst_org.squeeze(), image_src_org.squeeze(), location_dst, location_src)
-    #     draw_matches(timestamp_dst[0], image_dst_org.squeeze(), image_src_org.squeeze(), gt_sampled_locations_dst, gt_sampled_locations_src)
-    #
-    #     cr = correct_rate(train_data_dir, location_src, location_dst, gt_sampled_locations_dst, gt_sampled_locations_src)
-    #     print("correct rate = ", cr)
-    #     sum += cr
-    # average_correct_rate = sum / i
-    # print(average_correct_rate)
 
+        writer.add_scalar('loss', loss)
+        if i % 100 == 0:
+            torch.save({
+                'epoch': epoch + 1,
+                'state_dict': model.state_dict(),
+                'optimizer': optimizer.state_dict(),
+            }, 'checkpoint.pth')
 
-
-
-
-
-
-
+    writer.add_scalar('train/epoch_loss', loss, global_step=epoch)
 
 
 
@@ -149,10 +149,10 @@ if __name__ == "__main__":
     train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=1, shuffle=False, drop_last=True)
     valid_loader = torch.utils.data.DataLoader(dataset=valid_data, batch_size=1, shuffle=False, drop_last=True)
 
-    model = UNet()
+    model = U_Net()
     model.to(device=device)
-    #checkpoint = torch.load('checkpoint.pth', map_location = torch.device('cuda'))
-    #model.load_state_dict(checkpoint['state_dict'])
+    checkpoint = torch.load('checkpoint.pth', map_location = torch.device('cuda'))
+    model.load_state_dict(checkpoint['state_dict'])
 
     # --------------------------- define loss function and optimizer -------------------------
 
@@ -160,15 +160,15 @@ if __name__ == "__main__":
     # lr_stepsize = 500
     optimizer = optim.Adam(model.parameters(), lr=lr_init, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
     # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_stepsize, gamma=0.8, last_epoch=3)
-    # writer = SummaryWriter('runs')
+    writer = SummaryWriter('runs')
 
     # ------------------------------------ training -----------------------------------------
 
 
     for epoch in range(epochs):
         # scheduler.step()
-        train(train_loader, model, optimizer, epoch, train_sequence, train_data_dir)
+        train(train_loader, model, optimizer, epoch, train_data_dir, writer)
         # valid(valid_loader, model, optimizer, epoch, writer, valid_sequence, valid_data_dir)
-    # writer.close()
+    writer.close()
 
 

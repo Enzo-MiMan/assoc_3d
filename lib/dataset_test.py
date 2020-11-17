@@ -9,9 +9,7 @@ import numpy as np
 class Scan_Loader():
     def __init__(self, data_path):
         self.data_path = data_path
-        self.coordinate_files = sorted(glob.glob(join(data_path, 'all_point_depth_pixel_coordinate/*.txt')))
-
-
+        self.coordinate_files = sorted(glob.glob(join(data_path, 'point_pixel_location/*.txt')))
         
     def __getitem__(self, index):
 
