@@ -38,10 +38,12 @@ class Scan_Loader():
         return len(self.gt_files_dst)-1
 
 
-class Scan_Loader_NoLabel():
-    """cdc"""
+class Data_Loader():
+    """
 
 
+
+    """
     def __init__(self, data_path):
         self.data_path = data_path
         self.depth_gap4_list_dst = sorted(glob.glob(join(data_path, 'depth_gt_dst/*.txt')))

@@ -4,7 +4,7 @@ import torch
 from torch import optim
 from tensorboardX import SummaryWriter
 
-from lib.dataset import Scan_Loader, Scan_Loader_NoLabel
+from lib.dataset import Scan_Loader, Data_Loader
 from lib.model import U_Net
 from lib.loss import triplet_loss
 from lib.utils import read_locations
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    train_data = Scan_Loader_NoLabel(train_data_dir)
+    train_data = Data_Loader(train_data_dir)
     valid_data = Scan_Loader(valid_data_dir)
 
     batch_size = 1

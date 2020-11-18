@@ -130,8 +130,8 @@ for sequence_name in all_sequences:
 
     # output file rebuild
     depth_image_dir = re_mkdir_dir(sequence_name, 'enzo_depth')
-    pixel_location_dir = re_mkdir_dir(sequence_name, 'enzo_pixel_location')
-    world_location_dir = re_mkdir_dir(sequence_name, 'enzo_world_location')
+    pixel_coord_dir = re_mkdir_dir(sequence_name, 'enzo_pixel_location')
+    world_coord_dir = re_mkdir_dir(sequence_name, 'enzo_world_location')
 
     # ----------------------
     old_dir = join(data_dir, str(sequence_name), 'depth_enzo')
@@ -166,12 +166,12 @@ for sequence_name in all_sequences:
         img_path = join(depth_image_dir, '{}.png'.format(timestamp))
         cv2.imwrite(img_path, pano_img)
 
-        pixel_coord_file = join(pixel_location_dir, '{}.txt'.format(timestamp))
+        pixel_coord_file = join(pixel_coord_dir, '{}.txt'.format(timestamp))
         with open(pixel_coord_file, 'a+') as myfile:
             for x, y, dist in pixel_coord:
                 myfile.write(str(x) + " " + str(y) + ' ' + str(dist) + '\n')
 
-        pixel_coord_file = join(world_location_dir, '{}.txt'.format(timestamp))
+        pixel_coord_file = join(world_coord_dir, '{}.txt'.format(timestamp))
         with open(pixel_coord_file, 'a+') as myfile:
             for x, y, z in world_coord:
                 myfile.write(str(x) + " " + str(y) + ' ' + str(z) + '\n')

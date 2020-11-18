@@ -4,7 +4,7 @@ import numpy as np
 
 
 def make_frames_from_csv(csv_path):
-    readings_dict = dict()
+    readings_dict = {}
     with open(csv_path, 'r') as input_file:
         reader = csv.reader(input_file)
         next(reader)
