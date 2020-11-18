@@ -142,6 +142,7 @@ if __name__ == "__main__":
         saved_filename = join(saved_dir, sequence_name+'.png')
         image_title = sequence_name+'   Gmapping'
         plot_slash_odom(np.array([full_traj[:, 3], full_traj[:, 7]]).T, image_title, saved_filename)
+        print('The trajectory' + sequence_name + 'has been saved')
 
     print('The trajectories are saved in ', join(project_dir, 'check_sequence/sequence_trajectories'))
 

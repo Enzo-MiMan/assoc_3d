@@ -28,8 +28,8 @@ from pcl2depth import velo_points_2_pano
 from pyquaternion import Quaternion
 
 
-def re_build_dir(sequence_name, dir_name):
-    dir = join(data_dir, str(sequence_name), dir_name)
+def re_mkdir_dir(sequence_name, header_name):
+    dir = join(data_dir, str(sequence_name), header_name)
     if os.path.exists(dir):
         shutil.rmtree(dir)
         time.sleep(5)
@@ -38,14 +38,15 @@ def re_build_dir(sequence_name, dir_name):
         os.makedirs(dir)
     return dir
 
+
 # get config
 project_dir = os.path.dirname(os.getcwd())
 with open(join(project_dir, 'config.yaml'), 'r') as f:
     cfg = yaml.load(f, Loader=yaml.FullLoader)
 
-data_dir = cfg['base_conf']['data_base']
+data_dir = join(os.path.dirname(project_dir), 'indoor_data')
 exp_names = cfg['radar']['exp_name']
-sequence_names = cfg['radar']['all_sequences']
+all_sequences = cfg['radar']['all_sequences']
 
 middle_transform = np.array(cfg['radar']['translation_matrix']['middle'])
 left_transform = np.array(cfg['radar']['translation_matrix']['left'])
@@ -63,7 +64,7 @@ right_quaternion = Quaternion(axis=[0, 0, 1], angle=-math.pi / 2)
 align_interval = 5e7
 
 
-for sequence_name in exp_names:
+for sequence_name in all_sequences:
 
     # --------------------------------- process middle ---------------------------------
 
@@ -128,9 +129,24 @@ for sequence_name in exp_names:
     # ------------------------- pcl to depth -------------------------
 
     # output file rebuild
-    depth_image_dir = re_build_dir(sequence_name, 'enzo_depth')
-    pixel_location_dir = re_build_dir(sequence_name, 'enzo_point_pixel_location')
-    world_location_dir = re_build_dir(sequence_name, 'enzo_point_world_location')
+    depth_image_dir = re_mkdir_dir(sequence_name, 'enzo_depth')
+    pixel_location_dir = re_mkdir_dir(sequence_name, 'enzo_pixel_location')
+    world_location_dir = re_mkdir_dir(sequence_name, 'enzo_world_location')
+
+    # ----------------------
+    old_dir = join(data_dir, str(sequence_name), 'depth_enzo')
+    if os.path.exists(old_dir):
+        shutil.rmtree(old_dir)
+
+    pixel_dir = join(data_dir, str(sequence_name), 'point_pixel_location')
+    if os.path.exists(pixel_dir):
+        shutil.rmtree(pixel_dir)
+
+    world_dir = join(data_dir, str(sequence_name), 'point_world_location')
+    if os.path.exists(world_dir):
+        shutil.rmtree(world_dir)
+    # ----------------------
+
 
 
     frame_idx = 0
@@ -146,7 +162,6 @@ for sequence_name in exp_names:
             print('{} frame skipped as all pts are out of fov!'.format(frame_idx))
             frame_idx = frame_idx + 1
             continue
-
 
         img_path = join(depth_image_dir, '{}.png'.format(timestamp))
         cv2.imwrite(img_path, pano_img)
