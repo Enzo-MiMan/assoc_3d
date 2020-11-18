@@ -58,7 +58,13 @@ def train(train_loader, model, optimizer, epoch, train_data_dir, writer):
 
 if __name__ == "__main__":
 
+    project_dir = os.path.dirname(os.getcwd())
+    with open(join(project_dir, 'config.yaml'), 'r') as f:
+        cfg = yaml.load(f, Loader=yaml.FullLoader)
 
+    data_dir = join(os.path.dirname(project_dir), 'indoor_data')
+    exp_names = cfg['radar']['exp_name']
+    train_sequence_names = cfg['radar']['training']
 
     # ----------------------------------- define path --------------------------------
 

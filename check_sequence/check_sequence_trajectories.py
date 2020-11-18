@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     data_dir = join(os.path.dirname(project_dir), 'indoor_data')
     exp_names = cfg['radar']['exp_name']
-    sequence_names = cfg['radar']['all_sequences']
+    all_sequences = cfg['radar']['all_sequences']
 
     saved_dir = join(project_dir, 'check_sequence/sequence_trajectories')
     if os.path.exists(saved_dir):
@@ -127,7 +127,7 @@ if __name__ == "__main__":
         os.makedirs(saved_dir)
 
     # iterate sequences
-    for sequence_name in sequence_names:
+    for sequence_name in all_sequences:
         gmapping_file = join(data_dir, sequence_name, 'true_delta_gmapping.csv')
         if not os.path.exists(gmapping_file):
             continue
