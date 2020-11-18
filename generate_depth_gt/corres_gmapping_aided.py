@@ -100,22 +100,27 @@ if __name__ == '__main__':
     with open(os.path.join(project_dir, 'config.yaml'), 'r') as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
-    data_dir = cfg['base_conf']['data_base']
+    data_dir = join(os.path.dirname(project_dir), 'indoor_data')
     exp_names = cfg['radar']['exp_name']
-    sequence_names = cfg['radar']['all_sequences']
+    all_sequences = cfg['radar']['all_sequences']
     gap = cfg['radar']['gap']
     DISTANCE_THRESHOLD = cfg['radar']['DISTANCE_THRESHOLD']
     v_fov = tuple(map(int, cfg['pcl2depth']['v_fov'][1:-1].split(',')))
     h_fov = tuple(map(int, cfg['pcl2depth']['h_multi_fov'][1:-1].split(',')))
 
 
-    for sequence in exp_names:
+    for sequence in all_sequences:
 
+        if not os.path.exists(join(data_dir, str(sequence))):
+            continue
+
+        # find timestamp matches between gmapping(lidar) and mm-wave with gap=4
         ts_matches = timestamp_match(data_dir, sequence, gap)
+        # read gt translation and rotation from 'true_delta_gmapping.csv'
         gmap_T, gmap_R = gmapping_TR(data_dir, sequence)
 
-        src_gt_files = join(data_dir, str(sequence), 'depth_gt_src')
-        dst_gt_files = join(data_dir, str(sequence), 'depth_gt_dst')
+        src_gt_files = join(data_dir, str(sequence), 'enzo_depth_gt_src')
+        dst_gt_files = join(data_dir, str(sequence), 'enzo_depth_gt_dst')
  
         if os.path.exists(src_gt_files):
             shutil.rmtree(src_gt_files)

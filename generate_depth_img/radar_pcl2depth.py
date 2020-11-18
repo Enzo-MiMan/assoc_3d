@@ -147,8 +147,6 @@ for sequence_name in all_sequences:
         shutil.rmtree(world_dir)
     # ----------------------
 
-
-
     frame_idx = 0
     corrd_dict = dict()
     for timestamp, frame in tqdm.tqdm(zip(timestamps, frames), total=len(timestamps)):
@@ -178,4 +176,5 @@ for sequence_name in all_sequences:
 
 
         frame_idx += 1
+    print('finished process {}'.format(sequence_name))
     print('In total {} images'.format(frame_idx))

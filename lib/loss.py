@@ -1,9 +1,9 @@
 import numpy as np
-import os
 import torch.nn.functional as F
 import torch
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 def triplet_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src):
     alpha = 5
@@ -37,10 +37,8 @@ def triplet_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_
     return loss
 
 
-
-
 def loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src):
-    loss = torcet_h.zeros(1)
+    loss = torch.zeros(1)
 
     for i in range(gt_sampled_locations_src.size(0)):
 
