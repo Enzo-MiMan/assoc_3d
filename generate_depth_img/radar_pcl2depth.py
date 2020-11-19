@@ -133,19 +133,6 @@ for sequence_name in all_sequences:
     pixel_coord_dir = re_mkdir_dir(sequence_name, 'enzo_pixel_location')
     world_coord_dir = re_mkdir_dir(sequence_name, 'enzo_world_location')
 
-    # ----------------------
-    old_dir = join(data_dir, str(sequence_name), 'depth_enzo')
-    if os.path.exists(old_dir):
-        shutil.rmtree(old_dir)
-
-    pixel_dir = join(data_dir, str(sequence_name), 'point_pixel_location')
-    if os.path.exists(pixel_dir):
-        shutil.rmtree(pixel_dir)
-
-    world_dir = join(data_dir, str(sequence_name), 'point_world_location')
-    if os.path.exists(world_dir):
-        shutil.rmtree(world_dir)
-    # ----------------------
 
     frame_idx = 0
     corrd_dict = dict()

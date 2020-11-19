@@ -25,12 +25,13 @@ import os
 from pcl2depth import filter_point, velo_points_2_pano
 from timestamp_match_mm_gmapping import timestamp_match
 from gmapping_R_T_from_csv import gmapping_TR
+from mm_3_to_1 import stitch_3_boards_data
 
 
+# stitch_3_boards_data(data_dir, sequence)
 
-def read_mm_pcl(mm_ts):
+def read_mm_pcl(frame, dst_mm_ts):
 
-    # read the mm-wave radar point clouds from two frames which have been matched with gmapping
     mm_path = join(data_dir, sequence, 'LMR_xyz', str(mm_ts) + '.xyz')
     mm_collect = o3d.io.read_point_cloud(mm_path)
     mm_collect = np.array(mm_collect.points)
@@ -38,10 +39,7 @@ def read_mm_pcl(mm_ts):
     return mm_collect
 
 
-def predict_next_pose(src_mm_ts, dst_mm_ts, src_gmap_ts, dst_gmap_ts, gmap_T, gmap_R):
-
-    mm_src_collect = read_mm_pcl(src_mm_ts)
-    mm_dst_collect = read_mm_pcl(dst_mm_ts)
+def predict_next_pose(mm_src_collect, mm_dst_collect, src_gmap_ts, dst_gmap_ts, gmap_T, gmap_R):
 
     # find the gap between two matched frames within gmapping timestamps
     first_index = np.array(np.where(gmap_T[:, 0] == dst_gmap_ts))[0, 0]
@@ -72,9 +70,7 @@ def nearest_neighbor(pc1, pc2):
     '''
 
     # assert src.shape == dst.shape
-
-    neigh = NearestNeighbors(n_neighbors=1)
-    neigh.fit(pc2)
+    neigh = NearestNeighbors(n_neighbors=1).fit(pc2)
     distances, indices = neigh.kneighbors(pc1, return_distance=True)
     return distances.ravel(), indices.ravel()
 
@@ -118,6 +114,8 @@ if __name__ == '__main__':
         ts_matches = timestamp_match(data_dir, sequence, gap)
         # read gt translation and rotation from 'true_delta_gmapping.csv'
         gmap_T, gmap_R = gmapping_TR(data_dir, sequence)
+        # stitch 3 boards point clouds
+        frames = stitch_3_boards_data(data_dir, sequence)
 
         src_gt_files = join(data_dir, str(sequence), 'enzo_depth_gt_src')
         dst_gt_files = join(data_dir, str(sequence), 'enzo_depth_gt_dst')
@@ -136,6 +134,18 @@ if __name__ == '__main__':
         else:
             os.makedirs(dst_gt_files)
 
+        # --------------------------------
+        gt_dst = join(data_dir, str(sequence), 'depth_gt_dst')
+        if os.path.exists(gt_dst):
+            shutil.rmtree(gt_dst)
+
+        gt_dst = join(data_dir, str(sequence), 'depth_gt_dst')
+        if os.path.exists(gt_dst):
+            shutil.rmtree(gt_dst)
+        # --------------------------------
+
+
+
         # ------------------------- pcl to depth -------------------------
 
         for i in range(1, len(ts_matches)):
@@ -147,21 +157,21 @@ if __name__ == '__main__':
             compose R, t within consecutive gap frames from gmapping 
             then apply R, t on source point cloud of mm-wave to predict the pose of point cloud in next frame
             """
-            mm_src_pred, mm_src_collect = predict_next_pose(src_mm_ts, dst_mm_ts, src_gmap_ts, dst_gmap_ts, gmap_T, gmap_R)
+            mm_src_pred, mm_src_collect = predict_next_pose(frames[str(src_mm_ts)], frames[str(dst_mm_ts)], src_gmap_ts, dst_gmap_ts, gmap_T, gmap_R)
 
             # find the intersection between predicted point cloud and collected point cloud
-            distances, indices = nearest_neighbor(mm_src_pred, mm_src_collect)
+            distances, indices = nearest_neighbor(mm_src_collect, mm_src_pred)
             pc_match = np.array([(i, v) for (i, v) in enumerate(indices)])
 
             # intersection: sample the points by the DISTANCE_THRESHOLD between two frames of mm-wave point cloud
-            sample_dst_indices = np.reshape(np.where(distances < DISTANCE_THRESHOLD), (-1))
-            sample_src_indices = pc_match[sample_dst_indices, 1]
+            sample_src_indices = np.reshape(np.where(distances < DISTANCE_THRESHOLD), (-1))
+            sample_dst_indices = pc_match[sample_src_indices, 1]
 
-            if len(sample_dst_indices) < 3 or len(sample_src_indices) < 3:
+            if len(sample_dst_indices) < 4 or len(sample_src_indices) < 4:
                 continue
 
-            mm_dst_collect = read_mm_pcl(dst_mm_ts)
-            mm_src_collect = read_mm_pcl(src_mm_ts)
+            mm_dst_collect = frames[str(dst_mm_ts)]
+            mm_src_collect = frames[str(src_mm_ts)]
 
             sample_dst = mm_dst_collect[sample_dst_indices, :]
             sample_src = mm_src_collect[sample_src_indices, :]
@@ -176,8 +186,11 @@ if __name__ == '__main__':
             valid_index_dst = filter_point(eff_points_dst, v_fov, h_fov)
             valid_index_src = filter_point(eff_points_src, v_fov, h_fov)
 
+            # save ground truth: pixel coordination, world coordination
             depth_gt(eff_points_dst[valid_index_dst & valid_index_src, :], dst_mm_ts, dst_gt_files, cfg)
             depth_gt(eff_points_src[valid_index_dst & valid_index_src, :], src_mm_ts, src_gt_files, cfg)
+
+        print('finished processing sequence: {}'.format(sequence))
 
 
 

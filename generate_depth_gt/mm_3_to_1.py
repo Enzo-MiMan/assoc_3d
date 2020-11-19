@@ -50,8 +50,6 @@ from pyquaternion import Quaternion
 from mmwave_bag import make_frames_from_csv
 
 
-
-
 def quaternion_to_rotation_matrix(quat):
     q = quat.copy()
     n = np.dot(q, q)
@@ -67,6 +65,7 @@ def quaternion_to_rotation_matrix(quat):
         dtype=q.dtype)
     return rot_matrix
 
+
 def euler_to_quaternion(yaw, pitch, roll):
     qx = np.sin(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) - np.cos(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
     qy = np.cos(roll/2) * np.sin(pitch/2) * np.cos(yaw/2) + np.sin(roll/2) * np.cos(pitch/2) * np.sin(yaw/2)
@@ -75,80 +74,58 @@ def euler_to_quaternion(yaw, pitch, roll):
     return np.array([qx, qy, qz, qw])
 
 
+def stitch_3_boards_data(data_dir, sequence):
 
+    # get config
+    project_dir = os.path.dirname(os.getcwd())
+    with open(os.path.join(project_dir, 'config.yaml'), 'r') as f:
+        cfg = yaml.load(f, Loader=yaml.FullLoader)
 
-# get config
-project_dir = os.path.dirname(os.getcwd())
-with open(os.path.join(project_dir, 'config.yaml'), 'r') as f:
-    cfg = yaml.load(f, Loader=yaml.FullLoader)
+    middle_transform = np.array(cfg['radar']['translation_matrix']['middle'])
+    left_transform = np.array(cfg['radar']['translation_matrix']['left'])
+    right_transform = np.array(cfg['radar']['translation_matrix']['right'])
 
-data_dir = cfg['base_conf']['data_base']
-exp_names = cfg['radar']['exp_name']
-sequence_names = cfg['radar']['all_sequences']
-DISTANCE_THRESHOLD = cfg['radar']['DISTANCE_THRESHOLD']
+    left_quaternion = Quaternion(axis=[0, 0, 1], angle=math.pi/2)
+    right_quaternion = Quaternion(axis=[0, 0, 1], angle=-math.pi/2)
 
-middle_transform = np.array(cfg['radar']['translation_matrix']['middle'])
-left_transform = np.array(cfg['radar']['translation_matrix']['left'])
-right_transform = np.array(cfg['radar']['translation_matrix']['right'])
+    topic_middle = '_slash_mmWaveDataHdl_slash_RScan_middle'
+    topic_left = '_slash_mmWaveDataHdl_slash_RScan_left'
+    topic_right = '_slash_mmWaveDataHdl_slash_RScan_right'
 
-left_quaternion = Quaternion(axis=[0, 0, 1], angle=math.pi/2)
-right_quaternion = Quaternion(axis=[0, 0, 1], angle=-math.pi/2)
+    # hyper-parameters
+    align_interval = 5e7
 
-
-# hyper-parameters
-align_interval = 5e7
-
-
-
-for sequence in sequence_names:
 
     # ------------------------ process middle ------------------------
 
-    csv_path = join(data_dir, str(sequence), '_slash_mmWaveDataHdl_slash_RScan_middle.csv')
-    if not os.path.exists(csv_path):
-        continue
+    csv_path = join(data_dir, str(sequence), topic_middle + '.csv')
 
     readings_dict = make_frames_from_csv(csv_path)
-    data_dict = collections.OrderedDict(sorted(readings_dict.items()))  #!!! sort the dict before using
+    data_dict = collections.OrderedDict(sorted(readings_dict.items()))  # !!! sort the dict before using
 
+    dict = {}
     frames = list()
-    intensities = list()
     timestamps = list()
-    valid_data = list()
-    count = 0
-
     for timestamp, pts in data_dict.items():
-
-        # iterate each pt
-        heatmap_per_frame = list()
-        test_frame = list()
+        frame = list()
         for pt in pts:
-            tmp = np.array(pt)
-            test_frame.append(tmp[[0, 1, 2, 3, 5]])
-            tmp_loc = tmp[0:3]
+            pt = np.array(pt)
+            translated_pt = pt + middle_transform[0:3]
+            frame.append(translated_pt)
 
-            translated_tmp = tmp_loc + middle_transform[0:3]
-
-            tmp[0] = translated_tmp[0]
-            tmp[1] = translated_tmp[1]
-            tmp[2] = translated_tmp[2]
-            heatmap_per_frame.append(tmp[[0, 1, 2, 3, 5]])
-
-            # do not add empty frames
-            if not heatmap_per_frame:
-                continue
-
-        frames.append(np.array(heatmap_per_frame))
+        # do not add empty frames
+        if not frame:
+            continue
+        frames.append(np.array(frame))
         timestamps.append(timestamp)
 
 
+    # --------------------------------- process left and right ---------------------------------
 
-
-    # -------------- process left and right --------------------
-
-    for topic in ['_slash_mmWaveDataHdl_slash_RScan_left', '_slash_mmWaveDataHdl_slash_RScan_right']:
-
+    # process left and right
+    for topic in [topic_left, topic_right]:
         csv_path = join(data_dir, str(sequence), topic + '.csv')
+
         if not os.path.exists(csv_path):
             continue
 
@@ -156,48 +133,48 @@ for sequence in sequence_names:
         data_dict = collections.OrderedDict(sorted(readings_dict.items()))  # !!! sort the dict before using
 
         for timestamp, pts in data_dict.items():
-
-            # iterate each pt
-            heatmap_per_frame = list()
-            test_frame = list()
+            frame = list()
             for pt in pts:
-                tmp = np.array(pt)
-                test_frame.append(tmp[[0, 1, 2, 3, 5]])
-                tmp_loc = tmp[0:3]
+                pt = np.array(pt)
 
-                if topic == '_slash_mmWaveDataHdl_slash_RScan_left':
-                    translated_tmp = left_quaternion.rotate(tmp_loc) + left_transform[0:3]
-                elif topic == '_slash_mmWaveDataHdl_slash_RScan_right':
-                    translated_tmp = right_quaternion.rotate(tmp_loc) + right_transform[0:3]
-                assert (tmp[0] != translated_tmp[0])
+                if topic == topic_left:
+                    translated_pt = left_quaternion.rotate(pt) + left_transform[0:3]
+                else:
+                    translated_pt = right_quaternion.rotate(pt) + right_transform[0:3]
+                assert (pt[0] != translated_pt[0])
 
-                tmp[0] = translated_tmp[0]
-                tmp[1] = translated_tmp[1]
-                tmp[2] = translated_tmp[2]
-                heatmap_per_frame.append(tmp[[0, 1, 2, 3, 5]])
-
+                frame.append(translated_pt)
             # do not add empty frames
-            if not heatmap_per_frame:
+            if not frame:
                 continue
 
-            # overlay middle, left, and right
-            for i in range(0, len(timestamps)):
+            # ----------------- concatenate -------------------------
+            # align frames
+            for i in range(len(timestamps)):
                 if abs(int(timestamp) - int(timestamps[i])) <= align_interval:
-                    frames[i] = np.concatenate((frames[i], np.array(heatmap_per_frame)))
+                    frames[i] = np.concatenate((frames[i], np.array(frame)))
+
+        for i, timestamp in enumerate(timestamps):
+            dict[timestamp] = frames[i]
+
+    return dict
 
 
-    file = os.path.join(data_dir, str(sequence), 'LMR_xyz')
-    if os.path.exists(file):
-        shutil.rmtree(file)
-        time.sleep(5)
-        os.makedirs(file)
-    else:
-        os.makedirs(file)
 
-    for i in range(len(timestamps)):
-        frame = frames[i]
-        for point in frame:
-            with open(os.path.join(data_dir, str(sequence), 'LMR_xyz', str(timestamps[i])+'.xyz'), 'a+') as file:
-                file.write(str(point[0]) + ' ' + str(point[1]) + ' ' + str(point[2]) + '\n')
+
+    #
+    # file = os.path.join(data_dir, str(sequence), 'LMR_xyz')
+    # if os.path.exists(file):
+    #     shutil.rmtree(file)
+    #     time.sleep(5)
+    #     os.makedirs(file)
+    # else:
+    #     os.makedirs(file)
+    #
+    # for i in range(len(timestamps)):
+    #     frame = frames[i]
+    #     for point in frame:
+    #         with open(os.path.join(data_dir, str(sequence), 'LMR_xyz', str(timestamps[i])+'.xyz'), 'a+') as file:
+    #             file.write(str(point[0]) + ' ' + str(point[1]) + ' ' + str(point[2]) + '\n')
 
 
