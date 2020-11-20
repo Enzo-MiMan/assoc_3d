@@ -1,9 +1,11 @@
 import os
 from os.path import join
 import torch
-from lib.dataset import Scan_Loader, Scan_Loader_NoLabel
+import yaml
+
+from lib.dataset import Scan_Loader, Data_Loader
 from lib.model import U_Net
-from lib.utils import pred_matches, draw_matches, draw_gt_matches, correct_rate, read_locations
+from lib.utils import pred_matches, draw_gt_matches, correct_rate, read_locations, draw_predicted_matches
 
 
 def test(test_loader, model, test_data_dir):
@@ -20,24 +22,25 @@ def test(test_loader, model, test_data_dir):
         # obtain all projected pixel point
         all_locations_dst_file = join(test_data_dir, 'enzo_pixel_location', timestamp_dst[0] + '.txt')
         all_locations_src_file = join(test_data_dir, 'enzo_pixel_location', timestamp_src[0] + '.txt')
-        gt_all_locations_dst = read_locations(all_locations_dst_file)
-        gt_all_locations_src = read_locations(all_locations_src_file)
+        all_locations_dst = read_locations(all_locations_dst_file)
+        all_locations_src = read_locations(all_locations_src_file)
 
         # obtain sampled projected pixel point (intersections)
-        # sampled_locations_dst_file = join(test_data_dir, 'depth_gt_dst', timestamp_dst[0] + '.txt')
-        # sampled_locations_src_file = join(test_data_dir, 'depth_gt_src', timestamp_src[0] + '.txt')
-        # gt_sampled_locations_dst = read_locations(sampled_locations_dst_file)
-        # gt_sampled_locations_src = read_locations(sampled_locations_src_file)
+        gt_dst_locations_file = join(test_data_dir, 'enzo_depth_gt_dst', timestamp_dst[0] + '.txt')
+        gt_src_locations_file = join(test_data_dir, 'enzo_depth_gt_src', timestamp_src[0] + '.txt')
+        gt_locations_dst = read_locations(gt_dst_locations_file)
+        gt_locations_src = read_locations(gt_src_locations_file)
 
-        gt_sampled_locations_dst = torch.tensor(gt_all_locations_dst).to(device=device, dtype=torch.int)
-        gt_sampled_locations_src = torch.tensor(gt_all_locations_src).to(device=device, dtype=torch.int)
+        all_locations_dst = torch.tensor(all_locations_dst).to(device=device, dtype=torch.int)
+        all_locations_src = torch.tensor(all_locations_src).to(device=device, dtype=torch.int)
 
         # predict pixel correspondence
-        location_dst, location_src, similarity = pred_matches(dst_descriptors, src_descriptors, gt_sampled_locations_src)
+        location_dst, location_src, similarity = pred_matches(dst_descriptors, src_descriptors, all_locations_src)
 
         # draw
-        # draw_predicted_matches(timestamp_dst[0], image_dst_org.squeeze(), image_src_org.squeeze(), location_dst, location_src, gt_sampled_locations_dst, similarity)
-        draw_gt_matches(timestamp_dst[0], image_dst_org.squeeze(), image_src_org.squeeze(), gt_sampled_locations_dst, gt_sampled_locations_src, similarity)
+        draw_predicted_matches(timestamp_dst[0], image_dst_org.squeeze(), image_src_org.squeeze(), location_dst,
+                               location_src, gt_locations_dst, gt_locations_src, similarity, test_data_dir)
+        # draw_gt_matches(timestamp_dst[0], image_dst_org.squeeze(), image_src_org.squeeze(), gt_sampled_locations_dst, gt_sampled_locations_src, similarity)
 
         # calculate correct rate
     #     strict_cr, tolerant_cr = correct_rate(test_data_dir, location_src, location_dst, gt_sampled_locations_dst, gt_sampled_locations_src)
@@ -68,7 +71,7 @@ if __name__ == "__main__":
     # ----------------------------------- set up --------------------------------
 
     root_dir = os.path.dirname(os.getcwd())
-    data_path = join(root_dir, 'indoor_data')
+    data_root = join(root_dir, 'indoor_data')
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = U_Net()
@@ -80,8 +83,8 @@ if __name__ == "__main__":
 
     for test_sequence in test_sequences:
 
-        test_data_dir = join(data_path, test_sequence)
-        test_data = Scan_Loader_NoLabel(test_data_dir)
+        test_data_dir = join(data_root, test_sequence)
+        test_data = Data_Loader(test_data_dir)
         test_loader = torch.utils.data.DataLoader(dataset=test_data, batch_size=1, shuffle=False, drop_last=True)
 
         test(test_loader, model, test_data_dir)

@@ -30,33 +30,36 @@ def pred_matches(dst_descriptors, src_descriptors, pixel_location_src):
 
 
 
-def draw_predicted_matches(timestamp_dst, image_dst, image_src, location_dst, location_src, gt_sampled_locations_dst, similarity):
+def draw_predicted_matches(timestamp_dst, image_dst, image_src, location_dst, location_src, gt_locations_dst,
+                           gt_locations_src, similarity, test_data_dir):
     (hA, wA) = image_src.shape[:2]
     (hB, wB) = image_dst.shape[:2]
 
-    sort_similarity = OrderedDict({i: similarity[i].item() for i in range(len(similarity))})
-    sort_similarity = sorted(sort_similarity.items(), key=lambda item: item[1], reverse=True)
+    # sort_similarity = OrderedDict({i: similarity[i].item() for i in range(len(similarity))})
+    # sort_similarity = sorted(sort_similarity.items(), key=lambda item: item[1], reverse=True)
 
-    for element in sort_similarity:
-        index = element[0]
-        A = location_src[index]
-        B = location_dst[index]
-        vis = np.ones((max(hA, hB), wA + wB + 5, 3), dtype='uint8') * 255
-        vis[0:hA, 0:wA] = image_src
-        vis[0:hB, wA + 5:] = image_dst
+    for k, gt_point in enumerate(gt_locations_src[:, :2]):
+        for index, point in enumerate(location_src):
+            if point[0] != gt_point[0] or point[1] != gt_point[1]:
+                continue
+            else:
+                A = location_src[index]
+                B = location_dst[index]
+                vis = np.ones((max(hA, hB), wA + wB + 5, 3), dtype='uint8') * 255
+                vis[0:hA, 0:wA] = image_src
+                vis[0:hB, wA + 5:] = image_dst
 
-        pixel_A = (int(A[1]), int(A[0]))
-        pixel_B = (int(B[1]) + wA + 5, int(B[0]))
+                pixel_A = (int(A[1]), int(A[0]))
+                pixel_B = (int(B[1]) + wA + 5, int(B[0]))
 
-        gt_dst_x, gt_dst_y = gt_sampled_locations_dst[index, :2]
+                gt_dst_x, gt_dst_y = gt_point
 
-        if gt_dst_x - 3 <= location_dst[index, 0] <= gt_dst_x + 3 and gt_dst_y - 3 <= location_dst[index, 1] <= gt_dst_y + 3:
-            cv2.line(vis, pixel_A, pixel_B, (0, 255, 0), 1)
-        else:
-            cv2.line(vis, pixel_A, pixel_B, (0, 0, 255), 1)
-
-        save_file = join('/Users/manmi/Documents/GitHub/indoor_data/2019-11-28-15-43-32/correspondence_predict_sampled', timestamp_dst + '-' + str(index) + '.png')
-        cv2.imwrite(save_file, vis)
+                if gt_dst_x - 3 <= location_dst[index, 0] <= gt_dst_x + 3 and gt_dst_y - 3 <= location_dst[index, 1] <= gt_dst_y + 3:
+                    cv2.line(vis, pixel_A, pixel_B, (0, 255, 0), 1)
+                else:
+                    cv2.line(vis, pixel_A, pixel_B, (0, 0, 255), 1)
+            save_file = join(test_data_dir, 'predicted_correspondence', timestamp_dst + '-' + str(k) + '.png')
+            cv2.imwrite(save_file, vis)
 
 
 def draw_gt_matches(timestamp_dst, image_dst, image_src, gt_sampled_locations_dst, gt_sampled_locations_src, similarity):
