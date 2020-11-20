@@ -11,7 +11,11 @@ def conv3x3_bn_relu(in_channels, out_channels, stride=1):
 
 def upsample(in_features, out_features):
     shape = out_features.shape[2:]  # h w
-    return F.upsample(in_features, size=shape, mode='bilinear', align_corners=True)
+    # return F.upsample(in_features, size=shape, mode='bilinear', align_corners=True)
+    return nn.functional.interpolate(in_features, size=shape, mode='bilinear', align_corners=True)
+
+
+
 
 
 def concat(in_features1, in_features2):
