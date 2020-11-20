@@ -3,10 +3,9 @@ import torch
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-
 def triplet_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src):
-    alpha = torch.tensor(5).to(device)
-    distance = torch.zeros(1, device=device)
+    alpha = torch.tensor(5).cuda()
+    distance = torch.zeros(1).cuda()
 
     for i in range(gt_sampled_locations_src.size(0)):
 
@@ -31,7 +30,7 @@ def triplet_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_
         max_n_distance = torch.max(n_cosine_distance, dim=0)[0]
         distance = distance + (max_n_distance - p_cosine_distance)
 
-        loss = torch.log(1 + torch.exp(alpha * distance))
+    loss = torch.log(1 + torch.exp(alpha * distance))
 
     return loss
 
