@@ -3,6 +3,7 @@ import cv2
 import torch
 from collections import OrderedDict
 from os.path import join
+import os
 
 def pred_matches(dst_descriptors, src_descriptors, pixel_location_src):
     """
@@ -38,6 +39,10 @@ def draw_predicted_matches(timestamp_dst, image_dst, image_src, location_dst, lo
     # sort_similarity = OrderedDict({i: similarity[i].item() for i in range(len(similarity))})
     # sort_similarity = sorted(sort_similarity.items(), key=lambda item: item[1], reverse=True)
 
+    correspondence_dir = join(test_data_dir, 'predicted_correspondence')
+    if os.path.exists(correspondence_dir):
+        os.makedirs(correspondence_dir)
+
     for k, gt_point in enumerate(gt_locations_src[:, :2]):
         for index, point in enumerate(location_src):
             if point[0] != gt_point[0] or point[1] != gt_point[1]:
@@ -58,7 +63,7 @@ def draw_predicted_matches(timestamp_dst, image_dst, image_src, location_dst, lo
                     cv2.line(vis, pixel_A, pixel_B, (0, 255, 0), 1)
                 else:
                     cv2.line(vis, pixel_A, pixel_B, (0, 0, 255), 1)
-                save_file = join(test_data_dir, 'predicted_correspondence', timestamp_dst + '-' + str(k) + '.png')
+                save_file = join(correspondence_dir, timestamp_dst + '-' + str(k) + '.png')
                 cv2.imwrite(save_file, vis)
 
 

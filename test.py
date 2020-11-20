@@ -89,7 +89,7 @@ if __name__ == "__main__":
         test_loader = torch.utils.data.DataLoader(dataset=test_data, batch_size=1, shuffle=False, drop_last=True)
 
         test(test_loader, model, test_data_dir)
-        print('finished test on sequence {}'.format())
+        print('finished test on sequence {}'.format(test_sequence))
 
 
 
