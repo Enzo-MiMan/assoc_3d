@@ -27,8 +27,8 @@ def train(train_loader, model, optimizer, epoch, train_data_dir, writer):
         gt_locations_src_file = join(train_data_dir, 'enzo_depth_gt_src', timestamp_src[0] + '.txt')
         gt_locations_dst = read_locations(gt_locations_dst_file)
         gt_locations_src = read_locations(gt_locations_src_file)
-        gt_sampled_locations_dst = torch.tensor(gt_locations_dst).to(device=device, dtype=torch.int)
-        gt_sampled_locations_src = torch.tensor(gt_locations_src).to(device=device, dtype=torch.int)
+        gt_sampled_locations_dst = torch.tensor(gt_locations_dst).to(device=device, dtype=torch.long)
+        gt_sampled_locations_src = torch.tensor(gt_locations_src).to(device=device, dtype=torch.long)
 
         loss = triplet_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src)
 
