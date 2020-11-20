@@ -71,7 +71,7 @@ if __name__ == "__main__":
     print(device)
     model = U_Net()
     model.to(device=device)
-    checkpoint = torch.load('checkpoint.pth', map_location = torch.device('cpu'))
+    checkpoint = torch.load('checkpoint.pth', map_location = torch.device('cuda'))
     model.load_state_dict(checkpoint['state_dict'])
 
     # --------------------- set up ------------------------
