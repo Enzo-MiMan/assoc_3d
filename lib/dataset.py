@@ -46,8 +46,8 @@ class Data_Loader():
     """
     def __init__(self, data_path):
         self.data_path = data_path
-        self.depth_gap4_list_dst = sorted(glob.glob(join(data_path, 'depth_gt_dst/*.txt')))
-        self.depth_gap4_list_src = sorted(glob.glob(join(data_path, 'depth_gt_src/*.txt')))
+        self.depth_gap4_list_dst = sorted(glob.glob(join(data_path, 'enzo_depth_gt_dst/*.txt')))
+        self.depth_gap4_list_src = sorted(glob.glob(join(data_path, 'enzo_depth_gt_src/*.txt')))
 
 
     def __getitem__(self, index):
@@ -57,8 +57,8 @@ class Data_Loader():
         _, file_name_src = os.path.split(self.depth_gap4_list_src[index])
         timestamp_src, _ = os.path.splitext(file_name_src)
 
-        img_file_dst = join(self.data_path, 'depth_enzo', timestamp_dst+'.png')
-        img_file_src = join(self.data_path, 'depth_enzo', timestamp_src+'.png')
+        img_file_dst = join(self.data_path, 'enzo_depth', timestamp_dst+'.png')
+        img_file_src = join(self.data_path, 'enzo_depth', timestamp_src+'.png')
 
         image_dst_org = cv2.imread(img_file_dst)
         image_src_org = cv2.imread(img_file_src)
