@@ -134,18 +134,6 @@ if __name__ == '__main__':
         else:
             os.makedirs(dst_gt_files)
 
-        # # --------------------------------
-        # gt_dst = join(data_dir, str(sequence), 'depth_gt_dst')
-        # if os.path.exists(gt_dst):
-        #     shutil.rmtree(gt_dst)
-        #
-        # gt_dst = join(data_dir, str(sequence), 'depth_gt_dst')
-        # if os.path.exists(gt_dst):
-        #     shutil.rmtree(gt_dst)
-        # # --------------------------------
-
-
-
         # ------------------------- pcl to depth -------------------------
 
         for i in range(1, len(ts_matches)):
