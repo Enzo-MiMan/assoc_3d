@@ -3,14 +3,14 @@ import torch
 
 def triplet_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src):
 
-    distance = torch.zeros(1).cuda()
+    distance = torch.zeros(1).float().cuda()
 
     for i in range(gt_sampled_locations_src.size(0)):
 
         src_x, src_y = gt_sampled_locations_src[i, :2]
         d_src = F.normalize(src_descriptors[0, :, src_x, src_y], dim=0)
 
-        n_cosine_distance = torch.zeros(gt_sampled_locations_src.size(0))
+        n_cosine_distance = torch.zeros(gt_sampled_locations_src.size(0)).float().cuda()
         for j in range(gt_sampled_locations_dst.size(0)):
 
             if i == j:
