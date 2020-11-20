@@ -1,4 +1,3 @@
-import numpy as np
 import torch.nn.functional as F
 import torch
 
@@ -6,8 +5,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def triplet_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src):
-    alpha = 5
-    distance = torch.tensor(np.array([0], dtype=np.float32), device=device)
+    alpha = torch.tensor(5).to(device)
+    distance = torch.zeros(1, device=device)
 
     for i in range(gt_sampled_locations_src.size(0)):
 
