@@ -58,8 +58,8 @@ def draw_predicted_matches(timestamp_dst, image_dst, image_src, location_dst, lo
                     cv2.line(vis, pixel_A, pixel_B, (0, 255, 0), 1)
                 else:
                     cv2.line(vis, pixel_A, pixel_B, (0, 0, 255), 1)
-            save_file = join(test_data_dir, 'predicted_correspondence', timestamp_dst + '-' + str(k) + '.png')
-            cv2.imwrite(save_file, vis)
+                save_file = join(test_data_dir, 'predicted_correspondence', timestamp_dst + '-' + str(k) + '.png')
+                cv2.imwrite(save_file, vis)
 
 
 def draw_gt_matches(timestamp_dst, image_dst, image_src, gt_sampled_locations_dst, gt_sampled_locations_src, similarity):

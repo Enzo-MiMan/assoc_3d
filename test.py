@@ -40,6 +40,7 @@ def test(test_loader, model, test_data_dir):
         # draw
         draw_predicted_matches(timestamp_dst[0], image_dst_org.squeeze(), image_src_org.squeeze(), location_dst,
                                location_src, gt_locations_dst, gt_locations_src, similarity, test_data_dir)
+
         # draw_gt_matches(timestamp_dst[0], image_dst_org.squeeze(), image_src_org.squeeze(), gt_sampled_locations_dst, gt_sampled_locations_src, similarity)
 
         # calculate correct rate
@@ -88,6 +89,7 @@ if __name__ == "__main__":
         test_loader = torch.utils.data.DataLoader(dataset=test_data, batch_size=1, shuffle=False, drop_last=True)
 
         test(test_loader, model, test_data_dir)
+        print('finished test on sequence {}'.format())
 
 
 
