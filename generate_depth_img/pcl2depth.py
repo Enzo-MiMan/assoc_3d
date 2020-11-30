@@ -28,7 +28,7 @@ def in_v_range_points(d, z, fov):
     return np.logical_and(np.arctan2(z, d) < (fov[1] * np.pi / 180), np.arctan2(z, d) > (fov[0] * np.pi / 180))
 
 
-def fov_setting(points, x, y, z, dist, h_fov, v_fov):
+def fov_setting(points, x, y, z, h_fov, v_fov):
     """ filter points based on h,v FOV  """
     h_points = in_h_range_points(x, y, h_fov)
     v_points = in_v_range_points(np.sqrt(x ** 2 + y ** 2), z, v_fov)
@@ -49,10 +49,10 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
     y_img = -(np.arctan2(z, np.sqrt(x ** 2 + y ** 2)) / (v_res * (np.pi / 180)))
 
     """ filter points based on h,v FOV  """
-    x_img = fov_setting(x_img, x, y, z, dist, h_fov, v_fov)
-    y_img = fov_setting(y_img, x, y, z, dist, h_fov, v_fov)
-    dist = fov_setting(dist, x, y, z, dist, h_fov, v_fov)
-    points = fov_setting(points, x, y, z, dist, h_fov, v_fov)
+    x_img = fov_setting(x_img, x, y, z, h_fov, v_fov)
+    y_img = fov_setting(y_img, x, y, z, h_fov, v_fov)
+    dist = fov_setting(dist, x, y, z, h_fov, v_fov)
+    points = fov_setting(points, x, y, z, h_fov, v_fov)
 
     """ directly return dist if dist empty  """
     if dist.size == 0:
@@ -71,13 +71,29 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
 
     if depth:
         # nomalize distance value & convert to depth map
-        dist = normalize_depth(dist, min_v=0, max_v=max_v)
+        color = normalize_depth(dist, min_v=0, max_v=max_v)
     else:
-        dist = normalize_val(dist, min_v=0, max_v=max_v)
+        color = normalize_val(dist, min_v=0, max_v=max_v)
 
     # array to img
     img = np.zeros([y_size + 1, x_size + 2], dtype=np.uint8)
-    img[y_img, x_img] = dist
-    pixel_coord = np.array([y_img, x_img, dist]).T
+    pixel_location = np.array([y_img, x_img]).T
+    pixel_coord = []
+    world_coord = []
 
-    return img, pixel_coord, points[:, :3]
+    """ When several points project on a same pixel, choose the closest one (smallest distance)"""
+    for row in np.unique(pixel_location[:, 0]):
+        point_index = np.where(pixel_location[:, 0] == row)
+        for col in np.unique(pixel_location[point_index, 1]):
+            indices = np.where(np.logical_and((pixel_location[:, 0] == row), (pixel_location[:, 1] == col)))[0]
+            if len(indices)>1:
+                min_point = indices[np.argmin(dist[indices])]
+                img[row, col] = color[min_point]
+                pixel_coord.append((row, col))
+                world_coord.append((points[min_point, 0], points[min_point, 1], points[min_point, 2]))
+            else:
+                img[row, col] = color[indices]
+                pixel_coord.append((row, col))
+                world_coord.append(tuple(points[indices, :][0]))
+
+    return img, pixel_coord, world_coord

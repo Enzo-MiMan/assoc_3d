@@ -40,7 +40,7 @@ def re_mkdir_dir(sequence_name, header_name):
 
 
 # get config
-project_dir = os.path.dirname(os.getcwd())
+project_dir = os.path.dirname(os.getcwd())    # '/Users/manmi/Documents/GitHub/assoc_3d'
 with open(join(project_dir, 'config.yaml'), 'r') as f:
     cfg = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -64,14 +64,15 @@ right_quaternion = Quaternion(axis=[0, 0, 1], angle=-math.pi / 2)
 align_interval = 5e7
 
 
-for sequence_name in all_sequences:
+for sequence_name in exp_names:
 
     # --------------------------------- process middle ---------------------------------
 
-    print(sequence_name)
     csv_path = join(data_dir, str(sequence_name), topic_middle + '.csv')
     if not os.path.exists(csv_path):
         continue
+
+    print("sequence: ", sequence_name)
 
     readings_dict = make_frames_from_csv(csv_path)
     data_dict = collections.OrderedDict(sorted(readings_dict.items()))  # !!! sort the dict before using
@@ -153,8 +154,8 @@ for sequence_name in all_sequences:
 
         pixel_coord_file = join(pixel_coord_dir, '{}.txt'.format(timestamp))
         with open(pixel_coord_file, 'a+') as myfile:
-            for x, y, dist in pixel_coord:
-                myfile.write(str(x) + " " + str(y) + ' ' + str(dist) + '\n')
+            for x, y in pixel_coord:
+                myfile.write(str(x) + " " + str(y) + '\n')
 
         pixel_coord_file = join(world_coord_dir, '{}.txt'.format(timestamp))
         with open(pixel_coord_file, 'a+') as myfile:

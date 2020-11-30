@@ -2,6 +2,8 @@ import os
 from os.path import join
 import torch
 import yaml
+import shutil
+import time
 
 from lib.dataset import Scan_Loader, Data_Loader
 from lib.model import U_Net
@@ -12,6 +14,7 @@ def test(test_loader, model, test_data_dir):
     model.eval()
     strict_sum = 0
     tolerant_sum = 0
+    sum_cr = 0
     for i, (timestamp_dst, timestamp_src, image_dst, image_src, image_dst_org, image_src_org) in enumerate(test_loader):
 
         image_dst = image_dst.to(device=device, dtype=torch.float32)
@@ -38,8 +41,10 @@ def test(test_loader, model, test_data_dir):
         location_dst, location_src, similarity = pred_matches(dst_descriptors, src_descriptors, all_locations_src)
 
         # draw
-        draw_predicted_matches(timestamp_dst[0], image_dst_org.squeeze(), image_src_org.squeeze(), location_dst,
+        cr = draw_predicted_matches(timestamp_dst[0], image_dst_org.squeeze(), image_src_org.squeeze(), location_dst,
                                location_src, gt_locations_dst, gt_locations_src, similarity, test_data_dir)
+        sum_cr = sum_cr + cr
+    print('average correct rate: ', sum_cr/i)
 
         # draw_gt_matches(timestamp_dst[0], image_dst_org.squeeze(), image_src_org.squeeze(), gt_sampled_locations_dst, gt_sampled_locations_src, similarity)
 
@@ -82,11 +87,21 @@ if __name__ == "__main__":
 
     # ----------------------------------- test --------------------------------
 
+
+
     for test_sequence in test_sequences:
 
         test_data_dir = join(data_root, test_sequence)
         test_data = Data_Loader(test_data_dir)
         test_loader = torch.utils.data.DataLoader(dataset=test_data, batch_size=1, shuffle=False, drop_last=True)
+
+        correspondence_dir = join(test_data_dir, 'predicted_correspondence')
+        if os.path.exists(correspondence_dir):
+            shutil.rmtree(correspondence_dir)
+            time.sleep(5)
+            os.makedirs(correspondence_dir)
+        else:
+            os.makedirs(correspondence_dir)
 
         test(test_loader, model, test_data_dir)
         print('finished test on sequence {}'.format(test_sequence))

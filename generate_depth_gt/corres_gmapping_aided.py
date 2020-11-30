@@ -39,22 +39,22 @@ def read_mm_pcl(frame, dst_mm_ts):
     return mm_collect
 
 
-def predict_next_pose(mm_src_collect, mm_dst_collect, src_gmap_ts, dst_gmap_ts, gmap_T, gmap_R):
+def predict_last_pose(mm_collect_src, mm_collect_dst, gmap_ts_src, gmap_ts_dst, gmap_T, gmap_R):
 
     # find the gap between two matched frames within gmapping timestamps
-    first_index = np.array(np.where(gmap_T[:, 0] == dst_gmap_ts))[0, 0]
-    second_index = np.array(np.where(gmap_T[:, 0] == src_gmap_ts))[0, 0]
+    first_index = np.array(np.where(gmap_T[:, 0] == gmap_ts_dst))[0, 0]
+    second_index = np.array(np.where(gmap_T[:, 0] == gmap_ts_src))[0, 0]
 
     # predict the pose of mm-wave destination point cloud
     for k in range(1, second_index-first_index+1):
+
         t = np.reshape(gmap_T[first_index + k, 1:4], (3, 1))
         R = np.reshape(gmap_R[first_index + k, 1:10], (3, 3))
 
-        mm_src_pred = (np.matmul(R, mm_dst_collect.T) + t).T
-        mm_dst_collect = mm_src_pred
+        mm_pred_src = (np.matmul(R, mm_collect_dst.T) + t).T
+        mm_collect_dst = mm_pred_src
 
-    return mm_src_pred, mm_src_collect
-
+    return mm_pred_src, mm_collect_src
 
 
 
@@ -75,19 +75,6 @@ def nearest_neighbor(pc1, pc2):
     return distances.ravel(), indices.ravel()
 
 
-
-def depth_gt(frame, timestamp, dir_path, cfg):
-
-    pano_img, point_info = velo_points_2_pano(frame, cfg['pcl2depth']['v_res'], cfg['pcl2depth']['h_res'], v_fov, h_fov, cfg['pcl2depth']['max_v'], depth=True)
-
-    pixel_coord_file = join(dir_path, '{}.txt'.format(timestamp))
-    with open(pixel_coord_file, 'a+') as myfile:
-        for row, col, dist in point_info:
-            myfile.write(str(row) + " " + str(col) + ' ' + str(dist) + '\n')
-
-
-
-
 if __name__ == '__main__':
 
     # ------------------------ get config ------------------------
@@ -105,34 +92,39 @@ if __name__ == '__main__':
     h_fov = tuple(map(int, cfg['pcl2depth']['h_multi_fov'][1:-1].split(',')))
 
 
-    for sequence in all_sequences:
+    for sequence in exp_names:
 
         if not os.path.exists(join(data_dir, str(sequence))):
             continue
 
-        # find timestamp matches between gmapping(lidar) and mm-wave with gap=4
+        print("sequence:", sequence)
+
+        """ 
+        find timestamp matches between gmapping and mm-wave with gap=4
+        the first column is mm-wave timestamps,  the second column is gmapping timestamps
+        """
         ts_matches = timestamp_match(data_dir, sequence, gap)
         # read gt translation and rotation from 'true_delta_gmapping.csv'
         gmap_T, gmap_R = gmapping_TR(data_dir, sequence)
         # stitch 3 boards point clouds
         frames = stitch_3_boards_data(data_dir, sequence)
 
-        src_gt_files = join(data_dir, str(sequence), 'enzo_depth_gt_src')
-        dst_gt_files = join(data_dir, str(sequence), 'enzo_depth_gt_dst')
- 
-        if os.path.exists(src_gt_files):
-            shutil.rmtree(src_gt_files)
-            time.sleep(5)
-            os.makedirs(src_gt_files)
-        else:
-            os.makedirs(src_gt_files)
+        src_gt_file = join(data_dir, str(sequence), 'enzo_depth_gt_src')
+        dst_gt_file = join(data_dir, str(sequence), 'enzo_depth_gt_dst')
 
-        if os.path.exists(dst_gt_files):
-            shutil.rmtree(dst_gt_files)
+        if os.path.exists(src_gt_file):
+            shutil.rmtree(src_gt_file)
             time.sleep(5)
-            os.makedirs(dst_gt_files)
+            os.makedirs(src_gt_file)
         else:
-            os.makedirs(dst_gt_files)
+            os.makedirs(src_gt_file)
+
+        if os.path.exists(dst_gt_file):
+            shutil.rmtree(dst_gt_file)
+            time.sleep(5)
+            os.makedirs(dst_gt_file)
+        else:
+            os.makedirs(dst_gt_file)
 
         # ------------------------- pcl to depth -------------------------
 
@@ -141,14 +133,12 @@ if __name__ == '__main__':
             src_mm_ts, src_gmap_ts = ts_matches[i, :]
             dst_mm_ts, dst_gmap_ts = ts_matches[i-1, :]
 
-            """
-            compose R, t within consecutive gap frames from gmapping 
-            then apply R, t on source point cloud of mm-wave to predict the pose of point cloud in next frame
-            """
-            mm_src_pred, mm_src_collect = predict_next_pose(frames[str(src_mm_ts)], frames[str(dst_mm_ts)], src_gmap_ts, dst_gmap_ts, gmap_T, gmap_R)
+            # then apply R, t on source points of mm-wave to predict coordinate of destination points (last next frame)
+            mm_pred_src, mm_collect_src = predict_last_pose(frames[str(src_mm_ts)], frames[str(dst_mm_ts)],
+                                                            src_gmap_ts, dst_gmap_ts, gmap_T, gmap_R)
 
             # find the intersection between predicted point cloud and collected point cloud
-            distances, indices = nearest_neighbor(mm_src_collect, mm_src_pred)
+            distances, indices = nearest_neighbor(mm_collect_src, mm_pred_src)
             pc_match = np.array([(i, v) for (i, v) in enumerate(indices)])
 
             # intersection: sample the points by the DISTANCE_THRESHOLD between two frames of mm-wave point cloud
@@ -158,11 +148,11 @@ if __name__ == '__main__':
             if len(sample_dst_indices) < 4 or len(sample_src_indices) < 4:
                 continue
 
-            mm_dst_collect = frames[str(dst_mm_ts)]
-            mm_src_collect = frames[str(src_mm_ts)]
+            mm_collect_dst = frames[str(dst_mm_ts)]
+            mm_collect_src = frames[str(src_mm_ts)]
 
-            sample_dst = mm_dst_collect[sample_dst_indices, :]
-            sample_src = mm_src_collect[sample_src_indices, :]
+            sample_dst = mm_collect_dst[sample_dst_indices, :]
+            sample_src = mm_collect_src[sample_src_indices, :]
 
             # only select those points with the certain range (in meters) - 5.12 meter for this TI board
             eff_rows_idx_dst = (sample_dst[:, 0] ** 2 + sample_dst[:, 1] ** 2) ** 0.5 < cfg['pcl2depth']['mmwave_dist_thre']
@@ -171,34 +161,42 @@ if __name__ == '__main__':
             eff_points_dst = sample_dst[eff_rows_idx_dst & eff_rows_idx_src, :]
             eff_points_src = sample_src[eff_rows_idx_dst & eff_rows_idx_src, :]
 
+            """ filter points based on v_fov, h_fov  """
             valid_index_dst = filter_point(eff_points_dst, v_fov, h_fov)
             valid_index_src = filter_point(eff_points_src, v_fov, h_fov)
 
-            # save ground truth: pixel coordination, world coordination
-            depth_gt(eff_points_dst[valid_index_dst & valid_index_src, :], dst_mm_ts, dst_gt_files, cfg)
-            depth_gt(eff_points_src[valid_index_dst & valid_index_src, :], src_mm_ts, src_gt_files, cfg)
+            """ project 3D point cloud into 2D depth image """
+            frame_dst = eff_points_dst[valid_index_dst & valid_index_src, :]
+            frame_src = eff_points_src[valid_index_dst & valid_index_src, :]
 
-        print('finished processing sequence: {}'.format(sequence))
+            pano_img_dst, pixel_coor_dst = velo_points_2_pano(frame_dst, cfg['pcl2depth']['v_res'], cfg['pcl2depth']['h_res'],
+                                                      v_fov, h_fov, cfg['pcl2depth']['max_v'], depth=True)
+            pano_img_src, pixel_coor_src = velo_points_2_pano(frame_src, cfg['pcl2depth']['v_res'], cfg['pcl2depth']['h_res'],
+                                                      v_fov, h_fov, cfg['pcl2depth']['max_v'], depth=True)
 
+            correspondence = np.hstack((pixel_coor_src, pixel_coor_dst))
+            new_correspondence = []
 
+            # """ When several points project on a same pixel, choose the closest one (biggest color value)"""
+            for row in np.unique(correspondence[:, 0]):
+                point_index = np.where(correspondence[:, 0] == row)
+                for col in np.unique(correspondence[point_index, 1]):
+                    indices = np.where(np.logical_and((correspondence[:, 0] == row), (correspondence[:, 1] == col)))[0]
+                    if len(indices) > 1:
+                        closest_point = indices[np.argmax(correspondence[indices, 2])]
+                        new_correspondence.append(correspondence[closest_point].reshape(-1))
+                    else:
+                        new_correspondence.append(correspondence[indices].reshape(-1))
 
+            new_correspondence = np.array(new_correspondence)
 
+            """ save ground truth: pixel coordination """
+            pixel_coord_src = join(src_gt_file, '{}.txt'.format(src_mm_ts))
+            with open(pixel_coord_src, 'a+') as myfile:
+                for row_src, col_src, dist_src, row_dst, col_dst, dist_dst in new_correspondence:
+                    myfile.write(str(row_src) + ' ' + str(col_src) + '\n')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            pixel_coord_dst = join(dst_gt_file, '{}.txt'.format(dst_mm_ts))
+            with open(pixel_coord_dst, 'a+') as myfile:
+                for row_src, col_src, dist_src, row_dst, col_dst, dist_dst in new_correspondence:
+                    myfile.write(str(row_dst) + ' ' + str(col_dst) + '\n')

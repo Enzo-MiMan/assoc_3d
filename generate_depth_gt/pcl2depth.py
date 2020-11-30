@@ -62,18 +62,15 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
     x_img = np.arctan2(-y, x) / (h_res * (np.pi / 180))
     y_img = -(np.arctan2(z, np.sqrt(x ** 2 + y ** 2)) / (v_res * (np.pi / 180)))
 
-    """ filter points based on h,v FOV  """
-    valid_index = fov_setting(x, y, z, h_fov, v_fov)
-    x_img = x_img[valid_index]
-    y_img = y_img[valid_index]
-    dist = dist[valid_index]
 
     """ directly return dist if dist empty  """
     if dist.size == 0:
         return dist
 
+    # array to img
     x_size = int(np.ceil((h_fov[1] - h_fov[0]) / h_res))
     y_size = int(np.ceil((v_fov[1] - v_fov[0]) / v_res))
+    img = np.zeros([y_size + 1, x_size + 2], dtype=np.uint8)
 
     # shift negative points to positive points (shift minimum value to 0)
     x_offset = h_fov[0] / h_res
@@ -88,10 +85,8 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
     else:
         dist = normalize_val(dist, min_v=0, max_v=max_v)
 
-    # array to img
-    img = np.zeros([y_size + 1, x_size + 2], dtype=np.uint8)
+    # project in to 2D image
     img[y_img, x_img] = dist
-
     point_info = np.array([y_img, x_img, dist]).T
 
     return img, point_info
