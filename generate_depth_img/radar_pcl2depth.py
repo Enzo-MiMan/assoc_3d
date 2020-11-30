@@ -64,7 +64,7 @@ right_quaternion = Quaternion(axis=[0, 0, 1], angle=-math.pi / 2)
 align_interval = 5e7
 
 
-for sequence_name in exp_names:
+for sequence_name in all_sequences:
 
     # --------------------------------- process middle ---------------------------------
 

@@ -57,7 +57,6 @@ def predict_last_pose(mm_collect_src, mm_collect_dst, gmap_ts_src, gmap_ts_dst, 
     return mm_pred_src, mm_collect_src
 
 
-
 def nearest_neighbor(pc1, pc2):
     '''
     Find the nearest (Euclidean) neighbor in pc2 for each point in pc1
@@ -92,7 +91,7 @@ if __name__ == '__main__':
     h_fov = tuple(map(int, cfg['pcl2depth']['h_multi_fov'][1:-1].split(',')))
 
 
-    for sequence in exp_names:
+    for sequence in all_sequences:
 
         if not os.path.exists(join(data_dir, str(sequence))):
             continue
