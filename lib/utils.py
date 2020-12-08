@@ -120,6 +120,5 @@ def read_locations(file):
         for point in file:
             row = int(point.split()[0])
             col = int(point.split()[1])
-            dep = int(point.split()[2])
-            pixel_locations.append([row, col, dep])
+            pixel_locations.append([row, col])
     return np.array(pixel_locations)

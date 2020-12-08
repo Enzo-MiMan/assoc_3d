@@ -13,6 +13,7 @@ output:
 
 import numpy as np
 import pandas as pd
+from os.path import join
 import yaml
 import os
 
@@ -64,9 +65,17 @@ def timestamp_match(data_dir, sequence, gap):
     return matches
 
 
-    # ------------------------ save ------------------------
-
-    # with open(os.path.join(data_dir, str(sequence), 'ts_match_gap.txt'),'a+') as file:
-    #     for pair in matches:
-    #         file.write(str(pair[0]) + " " + str(pair[1]) + '\n')
+# if __name__ == "__main__":
+#     project_dir = os.path.dirname(os.getcwd())
+#     with open(os.path.join(project_dir, 'config.yaml'), 'r') as f:
+#         cfg = yaml.load(f, Loader=yaml.FullLoader)
+#
+#     data_dir = join(os.path.dirname(project_dir), 'indoor_data')
+#     sequence = cfg['radar']['exp_name']
+#     gap = cfg['radar']['gap']
+#
+#     matches = timestamp_match(data_dir, sequence, gap)
+#     with open(os.path.join(data_dir, str(sequence), 'ts_match_gap4.txt'), 'a+') as file:
+#         for pair in matches:
+#             file.write(str(pair[0]) + " " + str(pair[1]) + '\n')
 

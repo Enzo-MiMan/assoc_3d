@@ -15,9 +15,6 @@ def upsample(in_features, out_features):
     return nn.functional.interpolate(in_features, size=shape, mode='bilinear', align_corners=True)
 
 
-
-
-
 def concat(in_features1, in_features2):
     return torch.cat([in_features1, in_features2], dim=1)
 
@@ -82,4 +79,4 @@ class U_Net(nn.Module):
         up3_1 = upsample(conv3_2, conv1_2)
         descriptors = concat(up3_1, merge6)
 
-        return descriptors
+        return score, descriptors

@@ -5,7 +5,7 @@ import yaml
 from torch import optim
 from tensorboardX import SummaryWriter
 
-from lib.dataset import Scan_Loader, Data_Loader
+from lib.dataset import Single_Loader, Pair_Loader
 from lib.model import U_Net
 from lib.loss import triplet_loss
 from lib.utils import read_locations
@@ -103,7 +103,7 @@ if __name__ == "__main__":
                 continue
 
             print('training on dataset: No.{},  sequence:{}'.format(i, train_sequence))
-            train_data = Data_Loader(train_data_dir)
+            train_data = Pair_Loader(train_data_dir)
             train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=1, shuffle=False, drop_last=True)
 
             train(train_loader, model, optimizer, epoch, train_data_dir, writer)

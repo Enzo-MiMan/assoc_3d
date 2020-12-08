@@ -50,8 +50,6 @@ from pyquaternion import Quaternion
 from mmwave_bag import make_frames_from_csv
 
 
-
-
 def quaternion_to_rotation_matrix(quat):
     q = quat.copy()
     n = np.dot(q, q)
