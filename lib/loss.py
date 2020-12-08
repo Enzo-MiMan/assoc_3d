@@ -1,6 +1,7 @@
 import torch.nn.functional as F
 import torch
 
+
 def triplet_loss(dst_descriptors, src_descriptors, gt_sampled_locations_dst, gt_sampled_locations_src):
 
     distance = torch.zeros(1).float().cuda()

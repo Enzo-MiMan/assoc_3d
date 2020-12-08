@@ -4,8 +4,7 @@ import torch
 import yaml
 from torch import optim
 from tensorboardX import SummaryWriter
-
-from lib.dataset import Single_Loader, Pair_Loader
+from lib.dataset import Pair_Loader
 from lib.model import U_Net
 from lib.loss import triplet_loss
 from lib.utils import read_locations
@@ -23,8 +22,8 @@ def train(train_loader, model, optimizer, epoch, train_data_dir, writer):
         src_descriptors = model(image_src)
 
         # obtain ground truth with pixel point matching (intersections)
-        gt_locations_dst_file = join(train_data_dir, 'enzo_depth_gt_dst', timestamp_dst[0] + '.txt')
-        gt_locations_src_file = join(train_data_dir, 'enzo_depth_gt_src', timestamp_src[0] + '.txt')
+        gt_locations_dst_file = join(train_data_dir, 'enzo_depth_gt_dst', str(timestamp_dst[0].item()) + '.txt')
+        gt_locations_src_file = join(train_data_dir, 'enzo_depth_gt_src', str(timestamp_src[0].item())+ '.txt')
         gt_locations_dst = read_locations(gt_locations_dst_file)
         gt_locations_src = read_locations(gt_locations_src_file)
         gt_sampled_locations_dst = torch.tensor(gt_locations_dst).to(device=device, dtype=torch.long)
@@ -47,7 +46,6 @@ def train(train_loader, model, optimizer, epoch, train_data_dir, writer):
             }, 'checkpoint.pth')
 
     # writer.add_scalar('train/epoch_loss', loss)
-
 
 
 if __name__ == "__main__":
@@ -76,8 +74,7 @@ if __name__ == "__main__":
 
     # --------------------- set up ------------------------
 
-    root_dir = os.path.dirname(os.getcwd())
-    data_path = join(root_dir, 'indoor_data')
+    data_path = join(os.path.dirname(project_dir), 'indoor_data')
 
     batch_size = 1
     epochs = 10
@@ -92,22 +89,21 @@ if __name__ == "__main__":
     # ------------------ training and validate --------------
 
     for epoch in range(epochs):
-        i = 0
         # scheduler.step()
 
         # --------------------- train ------------------------
-        for train_sequence in test_sequences:
+        for train_sequence in train_sequences:
 
-            train_data_dir = join(data_path, train_sequence)
-            if not os.path.exists(train_data_dir):
+            traindata_sequence_path = join(data_path, train_sequence)
+            if not os.path.exists(traindata_sequence_path):
                 continue
 
-            print('training on dataset: No.{},  sequence:{}'.format(i, train_sequence))
-            train_data = Pair_Loader(train_data_dir)
+            print('epoch: {}/{},  sequence:{}'.format(epoch, epochs, train_sequence))
+            train_data = Pair_Loader(traindata_sequence_path, patten='intersection')
             train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=1, shuffle=False, drop_last=True)
 
-            train(train_loader, model, optimizer, epoch, train_data_dir, writer)
-            i += 1
+            train(train_loader, model, optimizer, epoch, traindata_sequence_path, writer)
+
 
 
         # --------------------- validate ------------------------
