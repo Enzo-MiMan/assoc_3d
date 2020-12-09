@@ -12,7 +12,6 @@ input:
 output:  depth image   #  save in '../../indoor_data/2019-11-28-15-43-32/depth_enzo'
 '''
 
-
 import numpy as np
 import time
 import shutil
@@ -26,17 +25,8 @@ import math
 from mmwave_bag import make_frames_from_csv
 from pcl2depth import velo_points_2_pano
 from pyquaternion import Quaternion
+from lib.utils import re_mkdir_dir
 
-
-def re_mkdir_dir(sequence_name, header_name):
-    dir = join(data_dir, str(sequence_name), header_name)
-    if os.path.exists(dir):
-        shutil.rmtree(dir)
-        time.sleep(5)
-        os.makedirs(dir)
-    else:
-        os.makedirs(dir)
-    return dir
 
 
 # get config
@@ -130,12 +120,11 @@ for sequence_name in all_sequences:
     # ------------------------- pcl to depth -------------------------
 
     # output file rebuild
-    depth_image_dir = re_mkdir_dir(sequence_name, 'enzo_depth')
-    pixel_coord_dir = re_mkdir_dir(sequence_name, 'enzo_pixel_location')
-    world_coord_dir = re_mkdir_dir(sequence_name, 'enzo_world_location')
+    depth_image_dir = re_mkdir_dir(join(data_dir, str(sequence_name), 'enzo_depth'))
+    pixel_coord_dir = re_mkdir_dir(join(data_dir, str(sequence_name), 'enzo_pixel_location'))
+    world_coord_dir = re_mkdir_dir(join(data_dir, str(sequence_name), 'enzo_world_location'))
 
 
-    frame_idx = 0
     corrd_dict = dict()
     for timestamp, frame in tqdm.tqdm(zip(timestamps, frames), total=len(timestamps)):
 
@@ -143,11 +132,6 @@ for sequence_name in all_sequences:
         eff_rows_idx = (frame[:, 0] ** 2 + frame[:, 1] ** 2) ** 0.5 < cfg['pcl2depth']['mmwave_dist_thre']
         pano_img, pixel_coord, world_coord = velo_points_2_pano(frame[eff_rows_idx, :], cfg['pcl2depth']['v_res'], cfg['pcl2depth']['h_res'],
                                       v_fov, h_fov, cfg['pcl2depth']['max_v'], depth=True)
-
-        if pano_img.size == 0:
-            print('{} frame skipped as all pts are out of fov!'.format(frame_idx))
-            frame_idx = frame_idx + 1
-            continue
 
         img_path = join(depth_image_dir, '{}.png'.format(timestamp))
         cv2.imwrite(img_path, pano_img)
@@ -157,12 +141,9 @@ for sequence_name in all_sequences:
             for x, y in pixel_coord:
                 myfile.write(str(x) + " " + str(y) + '\n')
 
-        pixel_coord_file = join(world_coord_dir, '{}.txt'.format(timestamp))
-        with open(pixel_coord_file, 'a+') as myfile:
+        world_coord_file = join(world_coord_dir, '{}.txt'.format(timestamp))
+        with open(world_coord_file, 'a+') as myfile:
             for x, y, z in world_coord:
                 myfile.write(str(x) + " " + str(y) + ' ' + str(z) + '\n')
 
-
-        frame_idx += 1
     print('finished process {}'.format(sequence_name))
-    print('In total {} images'.format(frame_idx))

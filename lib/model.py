@@ -79,4 +79,4 @@ class U_Net(nn.Module):
         up3_1 = upsample(conv3_2, conv1_2)
         descriptors = concat(up3_1, merge6)
 
-        return score, descriptors
+        return descriptors

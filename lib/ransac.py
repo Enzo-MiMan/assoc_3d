@@ -86,7 +86,7 @@ def pc2array(pointcloud):
     return np.asarray(pointcloud.points)
 
 
-def registration_RANSAC(source,target,source_feature,target_feature,ransac_n=5,max_iteration=100,max_validation=100):
+def registration_RANSAC(source,target,source_feature,target_feature,ransac_n=4,max_iteration=100,max_validation=100):
     # the intention of RANSAC is to get the optimal transformation between the source and target point cloud
     s = pc2array(source)  # 26
     t = pc2array(target)  # 34
@@ -172,12 +172,15 @@ if __name__ == "__main__":
         else:
             os.makedirs(dst_ransac_dir)
 
-        timestamps_matching = join(data_dir, str(sequence), 'enzo_ts_match_gap4.txt')
-        mm_timestamps_gap4 = np.loadtxt(timestamps_matching, delimiter=' ', usecols=[0], dtype=np.int64)
-        for i in range(len(mm_timestamps_gap4)-1):
+        depth_gap4_list_dst = sorted(glob.glob(join(data_dir, str(sequence), 'enzo_depth_gt_dst/*.txt')))
+        depth_gap4_list_src = sorted(glob.glob(join(data_dir, str(sequence), 'enzo_depth_gt_src/*.txt')))
 
-            src_ts = mm_timestamps_gap4[i+1]
-            dst_ts = mm_timestamps_gap4[i]
+        for i in range(len(depth_gap4_list_dst)):
+
+            _, file_name_dst = os.path.split(depth_gap4_list_dst[i])
+            _, file_name_src = os.path.split(depth_gap4_list_src[i])
+            dst_ts, _ = os.path.splitext(file_name_dst)
+            src_ts, _ = os.path.splitext(file_name_src)
 
             # read point cloud from .xyz file
             src_xyz_file = join(data_dir, str(sequence), 'enzo_LMR_xyz', str(src_ts) +'.xyz')
@@ -210,18 +213,18 @@ if __name__ == "__main__":
 
             # ----------- draw the correspondence -----------
 
-            # transformation matrix is formed by R, T based on np.hstack and np.vstack(corporate two matrices by rows)
-            # Notice we need add the last row [0 0 0 1] to make it homogeneous
-            # transformation = np.vstack((np.hstack((np.float64(R), np.float64(T))), np.array([0,0,0,1])))
-            #
-            # # draw_registrations(r1, r2, transformation, True)
-            #
-            # # draw sampled point cloud
-            # pcd_src = o3d.geometry.PointCloud()
-            # pcd_dst = o3d.geometry.PointCloud()
-            # pcd_src.points = o3d.utility.Vector3dVector(sampled_src)
-            # pcd_dst.points = o3d.utility.Vector3dVector(sampled_dst)
-            # draw_registrations(pcd_src, pcd_dst, transformation, True)
-
-        m = m + 1
+        #     # transformation matrix is formed by R, T based on np.hstack and np.vstack(corporate two matrices by rows)
+        #     # Notice we need add the last row [0 0 0 1] to make it homogeneous
+        #     transformation = np.vstack((np.hstack((np.float64(R), np.float64(T))), np.array([0,0,0,1])))
+        #
+        #     # draw_registrations(r1, r2, transformation, True)
+        #
+        #     # draw sampled point cloud
+        #     pcd_src = o3d.geometry.PointCloud()
+        #     pcd_dst = o3d.geometry.PointCloud()
+        #     pcd_src.points = o3d.utility.Vector3dVector(sampled_src)
+        #     pcd_dst.points = o3d.utility.Vector3dVector(sampled_dst)
+        #     draw_registrations(pcd_src, pcd_dst, transformation, True)
+        #
+        # m = m + 1
 

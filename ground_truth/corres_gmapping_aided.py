@@ -19,16 +19,14 @@ import shutil
 import time
 from os.path import join
 from sklearn.neighbors import NearestNeighbors
-import matplotlib.pyplot as plt
 import yaml
 import os
 from pcl2depth import filter_point, velo_points_2_pano
 from timestamp_match_mm_gmapping import timestamp_match
 from gmapping_R_T_from_csv import gmapping_TR
-from mm_3_to_1 import stitch_3_boards_data
+from lib.mm_3_to_1 import stitch_3_boards_data
+from lib.utils import re_mkdir_dir
 
-
-# stitch_3_boards_data(data_dir, sequence)
 
 def read_mm_pcl(frame, dst_mm_ts):
 
@@ -90,40 +88,28 @@ if __name__ == '__main__':
     v_fov = tuple(map(int, cfg['pcl2depth']['v_fov'][1:-1].split(',')))
     h_fov = tuple(map(int, cfg['pcl2depth']['h_multi_fov'][1:-1].split(',')))
 
-
+    sequeence_num = 0
+    all_sequences_num = len(all_sequences)
     for sequence in all_sequences:
 
         if not os.path.exists(join(data_dir, str(sequence))):
             continue
+        print("sequence: {}/{},   {}", sequeence_num, all_sequences_num, sequence)
+        sequence_dir = join(data_dir, str(sequence))
 
-        print("sequence:", sequence)
+        """stitch 3 boards point clouds"""
+        frames = stitch_3_boards_data(sequence_dir)
 
         """ 
         find timestamp matches between gmapping and mm-wave with gap=4
         the first column is mm-wave timestamps,  the second column is gmapping timestamps
         """
-        ts_matches = timestamp_match(data_dir, sequence, gap)
-        # read gt translation and rotation from 'true_delta_gmapping.csv'
+        timestamp_path = join(sequence_dir, 'enzo_ts_match_gap4.txt')
+        ts_matches = np.loadtxt(timestamp_path, delimiter=' ', dtype=np.int64)
+
         gmap_T, gmap_R = gmapping_TR(data_dir, sequence)
-        # stitch 3 boards point clouds
-        frames = stitch_3_boards_data(data_dir, sequence)
-
-        src_gt_file = join(data_dir, str(sequence), 'enzo_depth_gt_src')
-        dst_gt_file = join(data_dir, str(sequence), 'enzo_depth_gt_dst')
-
-        if os.path.exists(src_gt_file):
-            shutil.rmtree(src_gt_file)
-            time.sleep(5)
-            os.makedirs(src_gt_file)
-        else:
-            os.makedirs(src_gt_file)
-
-        if os.path.exists(dst_gt_file):
-            shutil.rmtree(dst_gt_file)
-            time.sleep(5)
-            os.makedirs(dst_gt_file)
-        else:
-            os.makedirs(dst_gt_file)
+        src_gt_file = re_mkdir_dir(join(sequence_dir, 'enzo_depth_gt_src'))
+        dst_gt_file = re_mkdir_dir(join(sequence_dir, 'enzo_depth_gt_dst'))
 
         # ------------------------- pcl to depth -------------------------
 

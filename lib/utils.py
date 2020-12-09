@@ -3,6 +3,7 @@ import cv2
 import torch
 from collections import OrderedDict
 from os.path import join
+import matplotlib.pyplot as plt
 import os
 import shutil
 import time
@@ -19,7 +20,7 @@ def pred_matches(dst_descriptors, src_descriptors, pixel_location_src):
     similarity = []
 
     for i in range(len(pixel_location_src)):
-        row, col, dep = pixel_location_src[i, :]
+        row, col = pixel_location_src[i, :]
         src_descriptor = src_descriptors[0, :, row, col]
         simi = torch.cosine_similarity(src_descriptor.unsqueeze(1).unsqueeze(1), dst_descriptors[0, :, :, :], dim=0)
         pred_dst_x = torch.argmax(simi.view(1, -1)) / dst_descriptors.size()[-1]
@@ -122,3 +123,72 @@ def read_locations(file):
             col = int(point.split()[1])
             pixel_locations.append([row, col])
     return np.array(pixel_locations)
+
+def read_world_locations(file):
+    with open(file) as file:
+        world_locations = []
+        for point in file:
+            x = point.split()[0]
+            y = point.split()[1]
+            z = point.split()[2]
+            world_locations.append([x, y, z])
+    return np.array(world_locations)
+
+
+def re_mkdir_dir(dir_path):
+    if os.path.exists(dir_path):
+        shutil.rmtree(dir_path)
+        time.sleep(5)
+        os.makedirs(dir_path)
+    else:
+        os.makedirs(dir_path)
+    return dir_path
+
+
+def remove_dir(dir_path):
+    if os.path.exists(dir_path):
+        shutil.rmtree(dir_path)
+        time.sleep(5)
+
+
+
+def compose_trajectory(transformations, plot_trajectory=True):
+    full_traj = []
+
+    # initialize the origin
+    pred_transform_t_1 = np.array([[1, 0, 0, 0],
+                                   [0, 1, 0, 0],
+                                   [0, 0, 1, 0],
+                                   [0, 0, 0, 1]])
+
+    for pred_transform_t in transformations:
+
+        abs_pred_transform = np.dot(pred_transform_t_1, pred_transform_t)
+
+        full_traj.append(
+            [abs_pred_transform[0, 0], abs_pred_transform[0, 1], abs_pred_transform[0, 2], abs_pred_transform[0, 3],
+             abs_pred_transform[1, 0], abs_pred_transform[1, 1], abs_pred_transform[1, 2], abs_pred_transform[1, 3],
+             abs_pred_transform[2, 0], abs_pred_transform[2, 1], abs_pred_transform[2, 2], abs_pred_transform[2, 3]])
+
+        pred_transform_t_1 = abs_pred_transform
+
+    full_traj = np.array(full_traj)
+    if plot_trajectory:
+        show_trajectory(full_traj[:, 3], full_traj[:, 7], 'predicted_trajectory')
+
+    # saved_filename = '/Users/manmi/Documents/data/square_data/lidar_data/trajectory_lidar.txt'
+    # np.savetxt(saved_filename, full_traj, delimiter=",")
+
+
+def show_trajectory(x, y, title):
+    plt.figure(figsize=(10, 6))
+    plt.title(title, fontsize=20)
+    plt.xlabel('x', fontsize=14)
+    plt.ylabel('y', fontsize=14)
+    # traj.set_xlim(1, 5)
+    # traj.set_ylim([10, 40])
+    # traj.set_xticks(range(1, 5))
+    # traj.set_yticks([(i*10) for i in range(1, 5)])
+
+    plt.scatter(x, y, s=12, c='r', marker='o')
+    plt.show()
