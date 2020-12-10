@@ -32,11 +32,11 @@ def quaternion_to_matrix(l):
 
 
 
-def gmapping_TR(data_dir, sequence):
+def gmapping_TR(sequence_dir):
 
     # ------------------------ read in csv ------------------------
 
-    csv_path = os.path.join(data_dir, str(sequence), 'true_delta_gmapping.csv')
+    csv_path = os.path.join(sequence_dir, 'true_delta_gmapping.csv')
     with open(csv_path, 'r') as input_file:
         reader = csv.reader(input_file)
         next(reader)

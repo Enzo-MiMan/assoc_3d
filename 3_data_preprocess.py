@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 
 def normalize_depth(val, min_v, max_v):
@@ -33,15 +32,12 @@ def fov_setting(x, y, z, h_fov, v_fov):
     """ filter points based on h,v FOV  """
     h_points = in_h_range_points(x, y, h_fov)
     v_points = in_v_range_points(np.sqrt(x ** 2 + y ** 2), z, v_fov)
-
     return np.logical_and(h_points, v_points)
 
 
 def filter_point(points, v_fov, h_fov):
     # Projecting to 2D
-    x = points[:, 0]
-    y = points[:, 1]
-    z = points[:, 2]
+    x, y, z = points[:, 0], points[:, 1], points[:, 2]
 
     """ filter points based on h,v FOV  """
     valid_index = fov_setting(x, y, z, h_fov, v_fov)
@@ -49,19 +45,20 @@ def filter_point(points, v_fov, h_fov):
     return valid_index
 
 
-
 def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
 
-    # Projecting to 2D
-    x = points[:, 0]
-    y = points[:, 1]
-    z = points[:, 2]
+    # project point cloud to 2D point map
+    x, y, z = points[:, 0], points[:, 1], points[:, 2]
     dist = np.sqrt(x ** 2 + y ** 2 + z ** 2)
 
-    # project point cloud to 2D point map
     x_img = np.arctan2(-y, x) / (h_res * (np.pi / 180))
     y_img = -(np.arctan2(z, np.sqrt(x ** 2 + y ** 2)) / (v_res * (np.pi / 180)))
 
+    """ filter points based on h,v FOV  """
+    x_img = fov_setting(x_img, x, y, z, h_fov, v_fov)
+    y_img = fov_setting(y_img, x, y, z, h_fov, v_fov)
+    dist = fov_setting(dist, x, y, z, h_fov, v_fov)
+    points = fov_setting(points, x, y, z, h_fov, v_fov)
 
     """ directly return dist if dist empty  """
     if dist.size == 0:
@@ -80,13 +77,29 @@ def velo_points_2_pano(points, v_res, h_res, v_fov, h_fov, max_v, depth=True):
     y_img = np.trunc(y_img + y_offset + y_fine_tune).astype(np.int32)
 
     if depth:
-        # nomalize distance value & convert to depth map
-        dist = normalize_depth(dist, min_v=0, max_v=max_v)
+        # nomalize values to 0-255 & close distance value has high value
+        color = normalize_depth(dist, min_v=0, max_v=max_v)
     else:
-        dist = normalize_val(dist, min_v=0, max_v=max_v)
+        color = normalize_val(dist, min_v=0, max_v=max_v)
 
-    # project in to 2D image
-    img[y_img, x_img] = dist
-    point_info = np.array([y_img, x_img, dist]).T
+    # array to img
+    pixel_location = np.array([y_img, x_img]).T
+    pixel_coord = []
+    world_coord = []
 
-    return img, point_info
+    """ When several points project on a same pixel, choose the closest one (smallest distance)"""
+    for row in np.unique(pixel_location[:, 0]):
+        point_index = np.where(pixel_location[:, 0] == row)
+        for col in np.unique(pixel_location[point_index, 1]):
+            indices = np.where(np.logical_and((pixel_location[:, 0] == row), (pixel_location[:, 1] == col)))[0]
+            if len(indices)>1:
+                min_point = indices[np.argmin(dist[indices])]
+                img[row, col] = color[min_point]
+                pixel_coord.append((row, col))
+                world_coord.append((points[min_point, 0], points[min_point, 1], points[min_point, 2]))
+            else:
+                img[row, col] = color[indices]
+                pixel_coord.append((row, col))
+                world_coord.append(tuple(points[indices, :][0]))
+
+    return img, pixel_coord, world_coord

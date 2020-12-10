@@ -37,7 +37,7 @@ if __name__ == "__main__":
     align_interval = 5e7
 
     sequence_num = 0
-    all_sequence_num = len(train_sequences)
+    all_sequence_num = len(all_sequences)
     for sequence in all_sequences:
 
         sequence_dir = join(data_dir, sequence)
@@ -119,6 +119,6 @@ if __name__ == "__main__":
                 with open(os.path.join(save_dir, str(timestamps[i])+'.xyz'), 'a+') as file:
                     file.write(str(point[0]) + ' ' + str(point[1]) + ' ' + str(point[2]) + '\n')
 
-        sequence_num += sequence_num
+        sequence_num += 1
 
 
