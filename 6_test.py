@@ -1,21 +1,17 @@
 import os
+import open3d as o3d
 from os.path import join
 import torch
-import yaml
-import re
-import open3d as o3d
 import numpy as np
-from lib.data_loader import Pair_Loader
+from lib.data_loader import Pair_Loader, Ransac_Data_Loader
+import yaml
 from lib.model import U_Net
 from lib.utils import pred_matches, draw_gt_matches, correct_rate, read_pixel_coordination, read_world_coordination, \
-    draw_predicted_matches, read_world_locations, compose_trajectory, re_mkdir_dir
+        draw_predicted_matches, read_world_locations, compose_trajectory, re_mkdir_dir, read_ransac_pixel_coordination
 
 
-def test(test_loader, model, sequence_path, sequence):
+def test(test_loader, model, sequence_path, sequence, save_file, patten):
     model.eval()
-
-    save_dir = re_mkdir_dir(join(os.path.dirname(sequence_path), 'predicted_trajectory'))
-    save_file = join(save_dir, '{}.png'.format(str(sequence)))
 
     strict_sum = 0
     tolerant_sum = 0
@@ -28,14 +24,20 @@ def test(test_loader, model, sequence_path, sequence):
         dst_descriptors = model(image_dst)  # torch.Size([9, 3, 1])  torch.Size([9, 3, 3])
         src_descriptors = model(image_src)
 
-        # obtain all projected pixel point
-        all_pixel_coor_dst = join(sequence_path, 'enzo_all_pixel', str(timestamp_dst.item()) + '.txt')
-        all_pixel_coor_src = join(sequence_path, 'enzo_all_pixel', str(timestamp_src.item()) + '.txt')
-        all_locations_dst = read_pixel_coordination(all_pixel_coor_dst)
-        all_locations_src = read_pixel_coordination(all_pixel_coor_src)
+        if patten == "RANSAC":
+            pass
+            # obtain pixel coordination of sampled points by RANSAC
+            ransac_pixel_coor_dst = join(sequence_path, 'enzo_ransac_pixel_coor_pair', str(timestamp_dst.item()) + '.txt')
+            recorded_pixel_src, recorded_pixel_dst = read_ransac_pixel_coordination(ransac_pixel_coor_dst)
+        else:
+            # obtain pixel coordination of all points
+            all_pixel_coor_dst = join(sequence_path, 'enzo_all_pixel', str(timestamp_dst.item()) + '.txt')
+            all_pixel_coor_src = join(sequence_path, 'enzo_all_pixel', str(timestamp_src.item()) + '.txt')
+            recorded_pixel_dst = read_pixel_coordination(all_pixel_coor_dst)
+            recorded_pixel_src = read_pixel_coordination(all_pixel_coor_src)
 
         # predict correspondence, represent by pixel location
-        location_dst, location_src, similarity = pred_matches(dst_descriptors, src_descriptors, all_locations_src)
+        location_dst, location_src, similarity = pred_matches(dst_descriptors, src_descriptors, recorded_pixel_src)
 
         # world location
         all_world_coor_dst = join(sequence_path, 'enzo_all_world', str(timestamp_dst.item()) + '.txt')
@@ -47,9 +49,9 @@ def test(test_loader, model, sequence_path, sequence):
         valid_index_dst = []
         valid_index_src = []
         for i in range(len(location_dst)):
-            j = np.where(all_locations_dst[:, 0]==location_dst[i, 0])[0]
+            j = np.where(recorded_pixel_dst[:, 0] == location_dst[i, 0])[0]
             for k in j:
-                if all_locations_dst[k, 1] == location_dst[i, 1]:
+                if recorded_pixel_dst[k, 1] == location_dst[i, 1]:
                     valid_index_dst.append(k)
                     valid_index_src.append(i)
 
@@ -116,6 +118,7 @@ if __name__ == "__main__":
     train_sequences = cfg['radar']['training']
     valid_sequences = cfg['radar']['validating']
     test_sequences = cfg['radar']['testing']
+    patten = "RANSAC"
 
     # ----------------------------------- set up --------------------------------
 
@@ -127,19 +130,26 @@ if __name__ == "__main__":
 
     # ----------------------------------- test --------------------------------
 
+    save_dir = re_mkdir_dir(join(data_dir, 'predicted_trajectory'))
+
     sequence_num = 0
-    all_sequence_num = len(train_sequences)
+    all_sequence_num = len(test_sequences)
     for sequence in test_sequences:
 
         sequence_path = join(data_dir, sequence)
+        save_file = join(save_dir, '{}.png'.format(str(sequence)))
+
         if not os.path.exists(sequence_path):
             continue
         print('sequence: {}/{},  {}'.format(sequence_num, all_sequence_num, sequence))
 
-        test_data = Pair_Loader(sequence_path)
+        if patten == "RANSAC":
+            test_data = Ransac_Data_Loader(sequence_path)
+        else:  # all points without sampling in advance
+            test_data = Pair_Loader(sequence_path)
         test_loader = torch.utils.data.DataLoader(dataset=test_data, batch_size=1, shuffle=False)
 
-        test(test_loader, model, sequence_path, sequence)
+        test(test_loader, model, sequence_path, sequence, save_file, patten)
         print('finished test on sequence {}'.format(sequence))
 
         sequence_num += 1

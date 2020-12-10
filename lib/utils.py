@@ -129,6 +129,20 @@ def read_pixel_coordination(file):
     return np.array(pixel_locations)
 
 
+def read_ransac_pixel_coordination(file):
+    with open(file) as file:
+        pixel_locations_src = []
+        pixel_locations_dst = []
+        for point in file:
+            row_src = int(point.split()[0])
+            col_src = int(point.split()[1])
+            row_dst = int(point.split()[2])
+            col_dst = int(point.split()[3])
+            pixel_locations_src.append([row_src, col_src])
+            pixel_locations_dst.append([row_dst, col_dst])
+    return np.array(pixel_locations_src), np.array(pixel_locations_dst)
+
+
 def read_world_coordination(file):
     world_locations = list()
     with open(file) as f:

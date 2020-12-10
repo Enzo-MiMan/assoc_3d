@@ -14,6 +14,7 @@ import time
 import glob
 import sys
 import math
+from lib.utils import re_mkdir_dir
 
 
 THRESHOLD = 3.5
@@ -146,17 +147,20 @@ if __name__ == "__main__":
     test_sequences = cfg['radar']['testing']
     gap = cfg['radar']['gap']
 
-    m = 0
-    for sequence in all_sequences:
-        print('No.{}/36,  processing sequence: {}'.format(m, sequence))
+    sequence_num = 0
+    all_sequence_num = len(test_sequences)
+    for sequence in test_sequences:
 
         xyz_folder = join(data_dir, sequence, 'enzo_LMR_xyz')
         if not os.path.exists(xyz_folder):
             continue
+        print('sequence: {}/{},  {}'.format(sequence_num, all_sequence_num, sequence))
 
         # create the save dir
         src_ransac_dir = join(data_dir, str(sequence), 'enzo_ransac_src')
         dst_ransac_dir = join(data_dir, str(sequence), 'enzo_ransac_dst')
+
+        re_mkdir_dir(dir_path)
 
         if os.path.exists(src_ransac_dir):
             shutil.rmtree(src_ransac_dir)
