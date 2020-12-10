@@ -53,6 +53,10 @@ if __name__ == '__main__':
     data_dir = join(os.path.dirname(project_dir), 'indoor_data')
     exp_names = cfg['radar']['exp_name']
     all_sequences = cfg['radar']['all_sequences']
+    train_sequences = cfg['radar']['training']
+    valid_sequences = cfg['radar']['validating']
+    test_sequences = cfg['radar']['testing']
+
     gap = cfg['radar']['gap']
     DISTANCE_THRESHOLD = cfg['radar']['DISTANCE_THRESHOLD']
     v_fov = tuple(map(int, cfg['pcl2depth']['v_fov'][1:-1].split(',')))
