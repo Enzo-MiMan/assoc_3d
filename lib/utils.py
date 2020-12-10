@@ -203,7 +203,7 @@ def read_timestamp_from_filename(file_namae):
 
 
 def extract_frames(sequence_dir):
-    frame_files = sorted(glob.glob(join(sequence_dir, '*.xyz')))
+    frame_files = sorted(glob.glob(join(sequence_dir, 'enzo_LMR_xyz/*.xyz')))
     dict = {}
     for frame_file in frame_files:
         timestamp = read_timestamp_from_filename(frame_file)

@@ -1,9 +1,8 @@
-import open3d as o3d
 import numpy as np
+import os
 from os.path import join
 from sklearn.neighbors import NearestNeighbors
 import yaml
-import os
 from lib.utils import re_mkdir_dir, extract_frames, data_prepare
 from lib.pcl2depth import filter_point, velo_points_2_pano
 
@@ -48,7 +47,7 @@ if __name__ == '__main__':
     # ------------------------ get config ------------------------
 
     project_dir = os.getcwd()
-    with open(os.path.join(project_dir, 'config.yaml'), 'r') as f:
+    with open(join(project_dir, 'config.yaml'), 'r') as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
     data_dir = join(os.path.dirname(project_dir), 'indoor_data')
