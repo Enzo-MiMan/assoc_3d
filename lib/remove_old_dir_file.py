@@ -15,19 +15,12 @@ for sequence in all_sequences:
     if not os.path.exists(sequence_path):
         continue
 
-    enzo_depth = join(sequence_path, 'enzo_depth')
-    enzo_depth_gt_dst = join(sequence_path, 'enzo_depth_gt_dst')
-    enzo_depth_gt_src = join(sequence_path, 'enzo_depth_gt_src')
-    enzo_pixel_location = join(sequence_path, 'enzo_pixel_location')
-    enzo_world_location = join(sequence_path, 'enzo_world_location')
-    enzo_ts_match_gap4 = join(sequence_path, 'enzo_ts_match_gap4.txt ')
+        depth_gt_src
 
+    depth_gt_src = join(sequence_path, 'depth_gt_src')
+    enzo_ts_match_gap4 = join(sequence_path, 'enzo_ts_match_gap4.txt')
 
-    remove_dir(enzo_depth)
-    remove_dir(enzo_depth_gt_dst)
-    remove_dir(enzo_depth_gt_src)
-    remove_dir(enzo_pixel_location)
-    remove_dir(enzo_world_location)
+    remove_dir(depth_gt_src)
 
     if os.path.exists(enzo_ts_match_gap4):
         os.remove(enzo_ts_match_gap4)

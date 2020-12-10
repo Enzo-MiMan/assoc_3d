@@ -136,3 +136,4 @@ if __name__ == '__main__':
                     myfile.write(str(src_world[0]) + ' ' + str(src_world[1]) + ' ' + str(src_world[2]) + ' ' +
                                  str(dst_world[0]) + ' ' + str(dst_world[1]) + ' ' + str(dst_world[1]) + '\n')
 
+        sequeence_num += 1
