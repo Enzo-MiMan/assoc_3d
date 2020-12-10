@@ -29,7 +29,6 @@ if __name__ == '__main__':
     max_v = cfg['pcl2depth']['max_v']
     mmwave_dist_thre = cfg['pcl2depth']['mmwave_dist_thre']
 
-
     sequeence_num = 0
     all_sequences_num = len(all_sequences)
     for sequence in all_sequences:

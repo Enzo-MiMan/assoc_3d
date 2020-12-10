@@ -9,6 +9,7 @@ import shutil
 import time
 import glob
 import csv
+import re
 import pandas as pd
 
 def pred_matches(dst_descriptors, src_descriptors, pixel_location_src):
@@ -118,7 +119,7 @@ def correct_rate(test_data_dir, location_src, location_dst, gt_sampled_locations
     return strict_count/len(gt_sampled_locations_src), tolerant_count/len(gt_sampled_locations_src)
 
 
-def read_locations(file):
+def read_pixel_coordination(file):
     with open(file) as file:
         pixel_locations = []
         for point in file:
@@ -126,6 +127,20 @@ def read_locations(file):
             col = int(point.split()[1])
             pixel_locations.append([row, col])
     return np.array(pixel_locations)
+
+
+def read_world_coordination(file):
+    world_locations = list()
+    with open(file) as f:
+        content = f.readlines()
+        for line in content:
+            x = float(re.split('\s+', line)[0])
+            y = float(re.split('\s+', line)[1])
+            z = float(re.split('\s+', line)[2])
+            world_locations.append((x, y, z))
+    return np.array(world_locations)
+
+
 
 def read_world_locations(file):
     with open(file) as file:
@@ -154,7 +169,7 @@ def remove_dir(dir_path):
         time.sleep(5)
 
 
-def compose_trajectory(transformations, plot_trajectory=True):
+def compose_trajectory(transformations, sequence, save_file, plot_trajectory=True, save_trajectory=False):
     full_traj = []
 
     # initialize the origin
@@ -175,25 +190,23 @@ def compose_trajectory(transformations, plot_trajectory=True):
         pred_transform_t_1 = abs_pred_transform
 
     full_traj = np.array(full_traj)
-    if plot_trajectory:
-        show_trajectory(full_traj[:, 3], full_traj[:, 7], 'predicted_trajectory')
-
-    # saved_filename = '/Users/manmi/Documents/data/square_data/lidar_data/trajectory_lidar.txt'
-    # np.savetxt(saved_filename, full_traj, delimiter=",")
+    show_trajectory(full_traj[:, 3], full_traj[:, 7], str(sequence), save_file, plot_trajectory, save_trajectory)
 
 
-def show_trajectory(x, y, title):
+def show_trajectory(x, y, title, save_file, plot_trajectory, save_trajectory):
     plt.figure(figsize=(10, 6))
     plt.title(title, fontsize=20)
     plt.xlabel('x', fontsize=14)
     plt.ylabel('y', fontsize=14)
-    # traj.set_xlim(1, 5)
-    # traj.set_ylim([10, 40])
-    # traj.set_xticks(range(1, 5))
-    # traj.set_yticks([(i*10) for i in range(1, 5)])
+    plt.scatter(x, y, s=1, c='g', marker='o')
 
-    plt.scatter(x, y, s=12, c='r', marker='o')
-    plt.show()
+    plt.savefig(save_file)
+
+    # if save_trajectory:
+    #     plt.savefig(save_file)
+    #
+    # if plot_trajectory:
+    #     plt.show()
 
 
 def read_timestamp_from_filename(file_namae):
